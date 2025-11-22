@@ -26,3 +26,7 @@ variable "api_name" {
   type        = string
   default     = "lms-api"
 }
+variable "s3_bucket_name" {
+  description = "No se que nonmbre poner xD"
+  type        = string 
+}
