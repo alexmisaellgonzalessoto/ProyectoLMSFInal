@@ -73,4 +73,3 @@ resource "aws_api_gateway_stage" "lms_stage" {
   #rest_api_id     = aws_api_gateway_rest_api.lms_api.id
   #type            = "COGNITO_USER_POOLS"
   #provider_arns   = [aws_cognito_user_pool.lms_users.arn]
-w
