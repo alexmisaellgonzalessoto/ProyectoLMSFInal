@@ -35,15 +35,24 @@ resource "aws_api_gateway_integration" "lambda_integration" {
   uri                     = aws_lambda_function.learning_events_lambda.invoke_arn
 }
 
-resource "aws_api_gateway_deployment" "deployment" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
+#Api deploymet omgg
+resource "aws_api_gateway_deployment" "lms_deployment" {
+  rest_api_id = aws_api_gateway_rest_api.lms_api.id
   
   depends_on = [
-    aws_api_gateway_integration.integration
+    aws_api_gateway_integration.lambda_integration
   ]
   
   lifecycle {
     create_before_destroy = true
+  }
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.learning_events.id,
+      aws_api_gateway_method.post_learning_event.id,
+      aws_api_gateway_integration.lambda_integration.id,
+    ]))
   }
 }
 
