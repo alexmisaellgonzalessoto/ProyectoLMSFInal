@@ -22,6 +22,7 @@ resource "aws_api_gateway_method" "post_learning_event" {
   resource_id   = aws_api_gateway_resource.learning_events.id
   http_method   = "POST"
   authorization = "NONE"
+  authorizer_id = aws_api_gateway_authorizer.lms_jwt_auth.id
 }
 
 resource "aws_api_gateway_integration" "MyDemoIntegration" {
