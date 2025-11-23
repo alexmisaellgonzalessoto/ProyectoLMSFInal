@@ -237,3 +237,51 @@ resource "aws_iam_role_policy" "lms_lambda_secrets" {
   role   = aws_iam_role.lms_lambda_role.id
   policy = data.aws_iam_policy_document.lms_secrets_manager_policy.json
 }
+
+#TAREAS PARA ECS FARGATE
+data "aws_iam_policy_document" "ecs_assume_role" {
+  statement {
+    sid    = "AllowECSAssumeRole"
+    effect = "Allow"
+    
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+    
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "lms_ecs_task_role" {
+  name               = "lms-ecs-task-role-${var.environment}"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
+
+  tags = {
+    Name        = "lms-ecs-task-role"
+    Environment = var.environment
+    Service     = "ECS"
+  }
+}
+
+#Política para que ECS pueda invocar Lambda
+data "aws_iam_policy_document" "ecs_lambda_invoke" {
+  statement {
+    sid    = "AllowInvokeLambda"
+    effect = "Allow"
+    
+    actions = [
+      "lambda:InvokeFunction",
+    ]
+    
+    resources = [
+      "arn:aws:lambda:${var.myregion}:${var.accountId}:function:lms-*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_lambda" {
+  name   = "lms-ecs-lambda-invoke-policy"
+  role   = aws_iam_role.lms_ecs_task_role.id
+  policy = data.aws_iam_policy_document.ecs_lambda_invoke.json
+}
