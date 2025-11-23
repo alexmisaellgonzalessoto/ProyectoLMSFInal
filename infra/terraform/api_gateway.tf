@@ -5,6 +5,10 @@ resource "aws_api_gateway_rest_api" "api" {
   endpoint_configuration {
     types = ["REGIONAL"]
   }
+  tags = {
+    Name        = "lms-api"
+    Environment = var.environment
+  }
 }
 
 resource "aws_api_gateway_resource" "resource" {
