@@ -238,6 +238,12 @@ resource "aws_iam_role_policy" "lms_lambda_secrets" {
   policy = data.aws_iam_policy_document.lms_secrets_manager_policy.json
 }
 
+#POLITICA PARA VPC
+resource "aws_iam_role_policy_attachment" "lambda_vpc_execution" {
+  role       = aws_iam_role.lms_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 #TAREAS PARA ECS FARGATE
 data "aws_iam_policy_document" "ecs_assume_role" {
   statement {
