@@ -193,3 +193,47 @@ resource "aws_iam_role_policy" "lms_lambda_sqs" {
   role   = aws_iam_role.lms_lambda_role.id
   policy = data.aws_iam_policy_document.lms_sqs_policy.json
 }
+
+#POLITICA PARA SES
+data "aws_iam_policy_document" "lms_ses_policy" {
+  statement {
+    sid    = "AllowSendEmail"
+    effect = "Allow"
+    
+    actions = [
+      "ses:SendEmail",
+      "ses:SendTemplatedEmail",
+    ]
+    
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "lms_lambda_ses" {
+  name   = "lms-lambda-ses-policy"
+  role   = aws_iam_role.lms_lambda_role.id
+  policy = data.aws_iam_policy_document.lms_ses_policy.json
+}
+
+#SECRET MANAGER PARA AURORA
+data "aws_iam_policy_document" "lms_secrets_manager_policy" {
+  statement {
+    sid    = "AllowGetDatabaseCredentials"
+    effect = "Allow"
+    
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:DescribeSecret",
+    ]
+    
+    resources = [
+      "arn:aws:secretsmanager:${var.myregion}:${var.accountId}:secret:lms/aurora/credentials-*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "lms_lambda_secrets" {
+  name   = "lms-lambda-secrets-manager-policy"
+  role   = aws_iam_role.lms_lambda_role.id
+  policy = data.aws_iam_policy_document.lms_secrets_manager_policy.json
+}
