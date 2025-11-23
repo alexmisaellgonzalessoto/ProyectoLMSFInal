@@ -25,15 +25,16 @@ resource "aws_api_gateway_method" "post_learning_event" {
   authorizer_id = aws_api_gateway_authorizer.lms_jwt_auth.id
 }
 
-resource "aws_api_gateway_integration" "MyDemoIntegration" {
-  rest_api_id = aws_api_gateway_rest_api.MyDemoAPI.id
-  resource_id = aws_api_gateway_resource.MyDemoResource.id
-  http_method = aws_api_gateway_method.MyDemoMethod.http_method
-
+#integracion con lambda jejeje
+resource "aws_api_gateway_integration" "lambda_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.lms_api.id
+  resource_id             = aws_api_gateway_resource.learning_events.id
+  http_method             = aws_api_gateway_method.post_learning_event.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.lambda.invoke_arn
+  uri                     = aws_lambda_function.learning_events_lambda.invoke_arn
 }
+
 resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   
