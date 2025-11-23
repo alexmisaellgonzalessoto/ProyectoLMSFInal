@@ -16,13 +16,14 @@ resource "aws_api_gateway_resource" "resource" {
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
   rest_api_id = aws_api_gateway_rest_api.api.id
 }
-
-resource "aws_api_gateway_method" "MyDemoMethod" {
-  rest_api_id   = aws_api_gateway_rest_api.MyDemoAPI.id
-  resource_id   = aws_api_gateway_resource.MyDemoResource.id
-  http_method   = "GET"
+#Metodo post para publicar eventos chi cheñol
+resource "aws_api_gateway_method" "post_learning_event" {
+  rest_api_id   = aws_api_gateway_rest_api.lms_api.id
+  resource_id   = aws_api_gateway_resource.learning_events.id
+  http_method   = "POST"
   authorization = "NONE"
 }
+
 resource "aws_api_gateway_integration" "MyDemoIntegration" {
   rest_api_id = aws_api_gateway_rest_api.MyDemoAPI.id
   resource_id = aws_api_gateway_resource.MyDemoResource.id
