@@ -40,7 +40,7 @@ resource "aws_lb" "lms_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = var.public_subnet_ids
+  subnets            = local.public_subnet_ids
 
   enable_deletion_protection = false  #Cambiar a true en producción
 
