@@ -99,3 +99,66 @@ resource "aws_rds_cluster" "aurora_cluster" {
     Environment = var.environment
   }
 }
+
+# IAM Role para Enhanced Monitoring
+resource "aws_iam_role" "rds_monitoring_role" {
+  name = "lms-rds-monitoring-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "lms-rds-monitoring-role"
+    Environment = var.environment
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring_policy" {
+  role       = aws_iam_role.rds_monitoring_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+}
+
+# CloudWatch Alarms para Aurora
+resource "aws_cloudwatch_metric_alarm" "aurora_cpu_high" {
+  alarm_name          = "lms-aurora-cpu-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "CPU de Aurora superó 80%"
+  alarm_actions       = []  #No olvidar agregar sns topic para notificaciones ps amiguito
+
+  dimensions = {
+    DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
+  alarm_name          = "lms-aurora-connections-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "DatabaseConnections"
+  namespace           = "AWS/RDS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "500"
+  alarm_description   = "Conexiones de Aurora superaron 500"
+  alarm_actions       = []  # lo mismo de arriba en la 142 xD
+
+  dimensions = {
+    DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
+  }
+}
