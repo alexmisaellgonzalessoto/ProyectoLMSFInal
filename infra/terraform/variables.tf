@@ -62,3 +62,22 @@ variable "lms_submissions_bucket" {
   type        = string
   default     = "lms-student-submissions"
 }
+
+# Aurora Configuration
+variable "aurora_master_username" {
+  description = "Usuario master de Aurora"
+  type        = string
+  default     = "lmsadmin"
+}
+
+variable "aurora_database_name" {
+  description = "Nombre de la base de datos principal"
+  type        = string
+  default     = "lms_database"
+}
+
+variable "aurora_instance_class" {
+  description = "Tipo de instancia Aurora"
+  type        = string
+  default     = "db.t3.medium"  # Para dev/staging. Usar db.r6g.large+ en prod
+}
