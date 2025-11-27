@@ -34,3 +34,33 @@ resource "aws_lambda_function" "learning_events_lambda" {
     }
   }
 }
+
+#funcion lambda para procesar archivos subidos del s3
+resource "aws_lambda_function" "process_submission" {
+  filename      = "process_submission.zip"
+  function_name = "lms-process-submission-${var.environment}"
+  role          = aws_iam_role.lms_lambda_role.arn
+  handler       = "index.handler"
+  runtime       = "python3.12"
+  timeout       = 60
+
+  environment {
+    variables = {
+      ENVIRONMENT = var.environment
+    }
+  }
+
+  tags = {
+    Name        = "lms-process-submission"
+    Environment = var.environment
+  }
+}
+
+# Permiso para que S3 invoque Lambda
+resource "aws_lambda_permission" "allow_s3_invoke" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.process_submission.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.student_submissions.arn
+}
