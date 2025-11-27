@@ -41,3 +41,24 @@ output "aurora_secret_arn" {
   value       = aws_secretsmanager_secret.aurora_credentials.arn
   sensitive   = true
 }
+
+#OUTPUTS S3
+output "certificates_bucket_name" {
+  description = "Nombre del bucket de certificados"
+  value       = aws_s3_bucket.certificates.id
+}
+
+output "educational_resources_bucket_name" {
+  description = "Nombre del bucket de recursos educativos"
+  value       = aws_s3_bucket.educational_resources.id
+}
+
+output "student_submissions_bucket_name" {
+  description = "Nombre del bucket de tareas de estudiantes"
+  value       = aws_s3_bucket.student_submissions.id
+}
+
+output "backups_bucket_name" {
+  description = "Nombre del bucket de backups"
+  value       = aws_s3_bucket.backups.id
+}
