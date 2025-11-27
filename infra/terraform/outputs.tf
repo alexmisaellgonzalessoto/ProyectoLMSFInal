@@ -17,3 +17,27 @@ output "backend_target_group_arn" {
   description = "ARN del Target Group Backend"
   value       = aws_lb_target_group.backend.arn
 }
+
+#OUTPUTS AURORA
+output "aurora_cluster_endpoint" {
+  description = "Endpoint del cluster Aurora (escritura)"
+  value       = aws_rds_cluster.aurora_cluster.endpoint
+  sensitive   = true
+}
+
+output "aurora_reader_endpoint" {
+  description = "Endpoint de lectura de Aurora"
+  value       = aws_rds_cluster.aurora_cluster.reader_endpoint
+  sensitive   = true
+}
+
+output "aurora_database_name" {
+  description = "Nombre de la base de datos"
+  value       = aws_rds_cluster.aurora_cluster.database_name
+}
+
+output "aurora_secret_arn" {
+  description = "ARN del secret con credenciales de Aurora"
+  value       = aws_secretsmanager_secret.aurora_credentials.arn
+  sensitive   = true
+}
