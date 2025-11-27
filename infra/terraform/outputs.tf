@@ -32,7 +32,7 @@ output "aurora_reader_endpoint" {
 }
 
 output "aurora_database_name" {
-  description = "Nombre de la base de datos"
+  description = "LMSDB"
   value       = aws_rds_cluster.aurora_cluster.database_name
 }
 
@@ -44,21 +44,21 @@ output "aurora_secret_arn" {
 
 #OUTPUTS S3
 output "certificates_bucket_name" {
-  description = "Nombre del bucket de certificados"
+  description = "Bucket certificados"
   value       = aws_s3_bucket.certificates.id
 }
 
 output "educational_resources_bucket_name" {
-  description = "Nombre del bucket de recursos educativos"
+  description = "Bucket recursos educativos"
   value       = aws_s3_bucket.educational_resources.id
 }
 
 output "student_submissions_bucket_name" {
-  description = "Nombre del bucket de tareas de estudiantes"
+  description = "Bucket tareas de los estudiantes"
   value       = aws_s3_bucket.student_submissions.id
 }
 
 output "backups_bucket_name" {
-  description = "Nombre del bucket de backups"
+  description = "Bucket de backups"
   value       = aws_s3_bucket.backups.id
 }
