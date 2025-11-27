@@ -62,3 +62,8 @@ output "backups_bucket_name" {
   description = "Bucket de backups"
   value       = aws_s3_bucket.backups.id
 }
+
+#output "s3_kms_key_arn" {
+  #description = "ARN de la KMS key para S3"
+  #value       = aws_kms_key.s3_kms.arn
+#}
