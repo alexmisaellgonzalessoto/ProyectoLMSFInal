@@ -226,3 +226,51 @@ resource "aws_s3_bucket_lifecycle_configuration" "submissions_lifecycle" {
       #days = 730
     }
   }
+
+resource "aws_kms_key" "s3_kms" {
+  description             = "KMS key para encriptación de buckets S3 del LMS"
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+
+  tags = {
+    Name        = "lms-s3-kms"
+    Environment = var.environment
+  }
+}
+
+resource "aws_kms_alias" "s3_kms_alias" {
+  name          = "alias/lms-s3-${var.environment}"
+  target_key_id = aws_kms_key.s3_kms.key_id
+}
+
+# Política de KMS para permitir uso de S3
+resource "aws_kms_key_policy" "s3_kms_policy" {
+  key_id = aws_kms_key.s3_kms.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${var.accountId}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow S3 to use the key"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
