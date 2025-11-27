@@ -46,19 +46,19 @@ variable "certificate_arn" {
   type        = string
 }
 variable "lms_certificates_bucket" {
-  description = "Nombre del bucket S3 para certificados"
+  description = "Cerficados"
   type        = string
   default     = "lms-certificates"
 }
 
 variable "lms_resources_bucket" {
-  description = "Nombre del bucket S3 para recursos educativos"
+  description = "Recursos educativos"
   type        = string
   default     = "lms-educational-resources"
 }
 
 variable "lms_submissions_bucket" {
-  description = "Nombre del bucket S3 para tareas de estudiantes"
+  description = "Tareas de estudiantes"
   type        = string
   default     = "lms-student-submissions"
 }
@@ -71,7 +71,7 @@ variable "aurora_master_username" {
 }
 
 variable "aurora_database_name" {
-  description = "Nombre de la base de datos principal"
+  description = "Aurora"
   type        = string
   default     = "lms_database"
 }
@@ -79,5 +79,13 @@ variable "aurora_database_name" {
 variable "aurora_instance_class" {
   description = "Tipo de instancia Aurora"
   type        = string
-  default     = "db.t3.medium"  # Para dev/staging. Usar db.r6g.large+ en prod
+  default     = "db.t3.medium"  
+}
+
+#variable para desarrollo de s3 (Su dominio)
+# variables.tf
+variable "domain_name" {
+  description = "Dominio del LMS"
+  type        = string
+  default     = "localhost"  #Esto cambiar en produccion pa que funcione xd
 }
