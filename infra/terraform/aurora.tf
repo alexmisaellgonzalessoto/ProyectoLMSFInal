@@ -162,3 +162,57 @@ resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
     DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
   }
 }
+
+#Instancias aurora
+#Escritura primero uwu
+resource "aws_rds_cluster_instance" "aurora_writer" {
+  identifier              = "lms-aurora-writer-${var.environment}"
+  cluster_identifier      = aws_rds_cluster.aurora_cluster.id
+  instance_class          = var.aurora_instance_class
+  engine                  = aws_rds_cluster.aurora_cluster.engine
+  engine_version          = aws_rds_cluster.aurora_cluster.engine_version
+  publicly_accessible     = false
+  db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
+  
+  # Performance Insights
+  performance_insights_enabled    = true
+  performance_insights_kms_key_id = aws_kms_key.aurora_kms.arn
+  performance_insights_retention_period = 7
+  
+  # Monitoreo avanzado
+  monitoring_interval = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring_role.arn
+
+  tags = {
+    Name        = "lms-aurora-writer"
+    Environment = var.environment
+    Role        = "Writer"
+  }
+}
+
+# Instancia de lectura
+resource "aws_rds_cluster_instance" "aurora_reader" {
+  count                   = var.environment == "prod" ? 1 : 0 
+  identifier              = "lms-aurora-reader-${var.environment}-${count.index + 1}"
+  cluster_identifier      = aws_rds_cluster.aurora_cluster.id
+  instance_class          = var.aurora_instance_class
+  engine                  = aws_rds_cluster.aurora_cluster.engine
+  engine_version          = aws_rds_cluster.aurora_cluster.engine_version
+  publicly_accessible     = false
+  db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
+  
+  # Performance Insights
+  performance_insights_enabled    = true
+  performance_insights_kms_key_id = aws_kms_key.aurora_kms.arn
+  performance_insights_retention_period = 7
+  
+  # Monitoreo avanzado
+  monitoring_interval = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring_role.arn
+
+  tags = {
+    Name        = "lms-aurora-reader-${count.index + 1}"
+    Environment = var.environment
+    Role        = "Reader"
+  }
+}
