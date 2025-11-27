@@ -221,9 +221,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "submissions_lifecycle" {
       storage_class = "GLACIER"
     }
 
-    # Eliminar después de 2 años (políticas educativas)
-    expiration {
-      days = 730
+    # Eliminar pero segun politicas consideradas por el equipo
+    #expiration {
+      #days = 730
     }
   }
-}
