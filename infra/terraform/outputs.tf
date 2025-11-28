@@ -67,3 +67,17 @@ output "backups_bucket_name" {
   #description = "ARN de la KMS key para S3"
   #value       = aws_kms_key.s3_kms.arn
 #}
+
+#OUTPUTS ECS
+output "ecs_cluster_name" {
+  description = "Cluster ECS"
+  value       = aws_ecs_cluster.lms_ecs_cluster.name
+}
+output "frontend_service_name" {
+  description = "ECS front"
+  value       = aws_ecs_service.frontend_service.name
+}
+output "backend_service_name" {
+  description = "ECS Back"
+  value       = aws_ecs_service.backend_service.name
+}
