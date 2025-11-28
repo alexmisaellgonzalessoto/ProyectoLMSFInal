@@ -89,3 +89,52 @@ variable "domain_name" {
   type        = string
   default     = "localhost"  #Esto cambiar en produccion pa que funcione xd
 }
+
+#VARIABLES PARA EL ECS
+variable "frontend_image" {
+  description = "Imagen Docker del frontend"
+  type        = string
+  default     = "nginx:latest"  # Cambiar por tu imagen real
+}
+
+variable "backend_image" {
+  description = "Imagen Docker del backend"
+  type        = string
+  default     = "node:18-alpine"  # Cambiar por tu imagen real
+}
+
+variable "frontend_cpu" {
+  description = "CPU para frontend (256, 512, 1024, 2048, 4096)"
+  type        = string
+  default     = "256"
+}
+
+variable "frontend_memory" {
+  description = "Memoria para frontend (512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192)"
+  type        = string
+  default     = "512"
+}
+
+variable "backend_cpu" {
+  description = "CPU para backend"
+  type        = string
+  default     = "512"
+}
+
+variable "backend_memory" {
+  description = "Memoria para backend"
+  type        = string
+  default     = "1024"
+}
+
+variable "frontend_desired_count" {
+  description = "Número de tareas frontend"
+  type        = number
+  default     = 2
+}
+
+variable "backend_desired_count" {
+  description = "Número de tareas backend"
+  type        = number
+  default     = 2
+}
