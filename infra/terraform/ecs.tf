@@ -231,3 +231,94 @@ resource "aws_ecs_task_definition" "backend" {
     Environment = var.environment
   }
 }
+
+#ECS SERVICE FRONTED
+resource "aws_ecs_service" "frontend_service" {
+  name            = "lms-frontend-service-${var.environment}"
+  cluster         = aws_ecs_cluster.lms_cluster.id
+  task_definition = aws_ecs_task_definition.frontend.arn
+  desired_count   = var.frontend_desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = local.private_subnet_ids
+    security_groups = [aws_security_group.ecs_tasks_sg.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.frontend_tg.arn
+    container_name   = "frontend"
+    container_port   = 3000
+  }
+
+  depends_on = [aws_lb_listener.https_listener]
+
+  tags = {
+    Name        = "lms-frontend-service"
+    Environment = var.environment
+  }
+}
+#ECS SERVICE BACKEND
+resource "aws_ecs_service" "backend_service" {
+  name            = "lms-backend-service-${var.environment}"
+  cluster         = aws_ecs_cluster.lms_cluster.id
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = var.backend_desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = local.private_subnet_ids
+    security_groups = [aws_security_group.ecs_tasks_sg.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.backend_tg.arn
+    container_name   = "backend"
+    container_port   = 8000
+  }
+
+  depends_on = [aws_lb_listener.https_listener]
+
+  tags = {
+    Name        = "lms-backend-service"
+    Environment = var.environment
+  }
+}
+
+#AUTOSCALING FRONTEND
+resource "aws_appautoscaling_policy" "frontend_cpu_scaling" {
+  name               = "lms-frontend-cpu-scaling-${var.environment}"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.frontend_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.frontend_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.frontend_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 70.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
+
+#AUTOSCALING BACKEND
+resource "aws_appautoscaling_policy" "backend_cpu_scaling" {
+  name               = "lms-backend-cpu-scaling-${var.environment}"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.backend_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.backend_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.backend_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 70.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
