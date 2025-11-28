@@ -291,3 +291,119 @@ resource "aws_iam_role_policy" "ecs_lambda" {
   role   = aws_iam_role.lms_ecs_task_role.id
   policy = data.aws_iam_policy_document.ecs_lambda_invoke.json
 }
+
+#IAM ROLE PARA ECS task ajsjas yo soy rol
+data "aws_iam_policy_document" "ecs_task_execution_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name               = "lms-ecs-task-execution-role-${var.environment}"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role.json
+
+  tags = {
+    Name        = "lms-ecs-task-execution-role"
+    Environment = var.environment
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Política adicional para acceder a Secrets Manager
+resource "aws_iam_role_policy" "ecs_secrets_policy" {
+  name = "lms-ecs-secrets-policy"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.aurora_credentials.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt"
+        ]
+        Resource = [
+          aws_kms_key.aurora_kms.arn
+        ]
+      }
+    ]
+  })
+}
+
+# IAM Role para ECS Task (permisos de la aplicación en runtime)
+resource "aws_iam_role" "ecs_task_role" {
+  name               = "lms-ecs-task-role-${var.environment}"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role.json
+
+  tags = {
+    Name        = "lms-ecs-task-role"
+    Environment = var.environment
+  }
+}
+
+# Políticas para el task role (acceso a S3, SQS, SNS, Lambda)
+resource "aws_iam_role_policy" "ecs_task_s3_policy" {
+  name = "lms-ecs-s3-access"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "${aws_s3_bucket.certificates.arn}/*",
+          "${aws_s3_bucket.educational_resources.arn}/*",
+          "${aws_s3_bucket.student_submissions.arn}/*",
+          aws_s3_bucket.certificates.arn,
+          aws_s3_bucket.educational_resources.arn,
+          aws_s3_bucket.student_submissions.arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "ecs_task_lambda_invoke" {
+  name = "lms-ecs-lambda-invoke"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "lambda:InvokeFunction"
+        ]
+        Resource = [
+          aws_lambda_function.learning_events_lambda.arn
+        ]
+      }
+    ]
+  })
+}
