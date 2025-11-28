@@ -98,3 +98,47 @@ resource "aws_lambda_event_source_mapping" "notifications_trigger" {
   
   function_response_types = ["ReportBatchItemFailures"]
 }
+
+#PROCESAR EMAILS
+resource "aws_lambda_function" "email_processor" {
+  filename         = "email_processor.zip"
+  function_name    = "lms-email-processor-${var.environment}"
+  role             = aws_iam_role.lms_lambda_role.arn
+  handler          = "index.handler"
+  runtime          = "python3.12"
+  timeout          = 50
+  memory_size      = 256
+  reserved_concurrent_executions = 5
+
+  environment {
+    variables = {
+      ENVIRONMENT   = var.environment
+      SES_FROM_EMAIL   = var.ses_from_email
+    }
+  }
+
+  tags = {
+    Name        = "lms-email-processor"
+    Environment = var.environment
+  }
+}
+
+#TRIGGER PARA EMAILS
+resource "aws_lambda_event_source_mapping" "emails_trigger" {
+  event_source_arn                   = aws_sqs_queue.emails.arn
+  function_name                      = aws_lambda_function.email_processor.arn
+  batch_size                         = 5
+  maximum_batching_window_in_seconds = 3
+  
+  function_response_types = ["ReportBatchItemFailures"]
+}
+#SNS TOPIC PARA NOTIFICAIONES 
+resource "aws_sns_topic" "notifications" {
+  name = "lms-notifications-topic-${var.environment}"
+
+  tags = {
+    Name        = "lms-notifications-topic"
+    Environment = var.environment
+    Purpose     = "SNS Topic for notifications"
+  }
+}
