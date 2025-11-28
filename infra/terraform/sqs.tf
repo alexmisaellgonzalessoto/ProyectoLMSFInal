@@ -24,3 +24,24 @@ resource "aws_sqs_queue" "notifications" {
     Purpose     = "Main notification queue"
   }
 }
+
+#COLA PARA LOS EMAILS
+resource "aws_sqs_queue" "email_queue" {
+  name                       = "lms-email-queue-${var.environment}"
+  delay_seconds              = 0
+  max_message_size           = 262144  
+  message_retention_seconds  = 345600  
+  receive_wait_time_seconds  = 10      
+  visibility_timeout_seconds = 300    
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.notification_dlq.arn
+    maxReceiveCount     = 5 
+  })
+
+  tags = {
+    Name        = "lms-email-queue"
+    Environment = var.environment
+    Purpose     = "Queue for email notifications"
+  }
+}
