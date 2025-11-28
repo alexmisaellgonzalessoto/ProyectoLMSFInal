@@ -138,3 +138,10 @@ variable "backend_desired_count" {
   type        = number
   default     = 2
 }
+
+#VARIABLE PARA SQS
+variable "ses_from_email" {
+  description = "Email verificado en SES para enviar notificaciones"
+  type        = string
+  default     = "noreply@lms.tuescuela.edu"
+}
