@@ -70,3 +70,164 @@ resource "aws_security_group_rule" "aurora_from_ecs" {
   source_security_group_id = aws_security_group.ecs_tasks_sg.id
   description              = "MySQL from ECS Tasks"
 }
+
+#TAREA FRONTEND
+resource "aws_ecs_task_definition" "frontend" {
+  family                   = "lms-frontend-${var.environment}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.frontend_cpu
+  memory                   = var.frontend_memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "frontend"
+      image     = var.frontend_image
+      essential = true
+      
+      portMappings = [
+        {
+          containerPort = 3000
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "NODE_ENV"
+          value = var.environment
+        },
+        {
+          name  = "REACT_APP_API_URL"
+          value = "https://${var.domain_name}/api"
+        },
+        {
+          name  = "REACT_APP_ENVIRONMENT"
+          value = var.environment
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.frontend_logs.name
+          "awslogs-region"        = var.myregion
+          "awslogs-stream-prefix" = "frontend"
+        }
+      }
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ])
+
+  tags = {
+    Name        = "lms-frontend-task"
+    Environment = var.environment
+  }
+}
+
+#TAREA BACKEND
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "lms-backend-${var.environment}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.backend_cpu
+  memory                   = var.backend_memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "backend"
+      image     = var.backend_image
+      essential = true
+      
+      portMappings = [
+        {
+          containerPort = 8000
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "NODE_ENV"
+          value = var.environment
+        },
+        {
+          name  = "PORT"
+          value = "8000"
+        },
+        {
+          name  = "DB_HOST"
+          value = aws_rds_cluster.aurora_cluster.endpoint
+        },
+        {
+          name  = "DB_PORT"
+          value = "3306"
+        },
+        {
+          name  = "DB_NAME"
+          value = var.aurora_database_name
+        },
+        {
+          name  = "S3_CERTIFICATES_BUCKET"
+          value = aws_s3_bucket.certificates.id
+        },
+        {
+          name  = "S3_RESOURCES_BUCKET"
+          value = aws_s3_bucket.educational_resources.id
+        },
+        {
+          name  = "S3_SUBMISSIONS_BUCKET"
+          value = aws_s3_bucket.student_submissions.id
+        },
+        {
+          name  = "AWS_REGION"
+          value = var.myregion
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = "${aws_secretsmanager_secret.aurora_credentials.arn}:password::"
+        },
+        {
+          name      = "DB_USERNAME"
+          valueFrom = "${aws_secretsmanager_secret.aurora_credentials.arn}:username::"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.backend_logs.name
+          "awslogs-region"        = var.myregion
+          "awslogs-stream-prefix" = "backend"
+        }
+      }
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ])
+
+  tags = {
+    Name        = "lms-backend-task"
+    Environment = var.environment
+  }
+}
