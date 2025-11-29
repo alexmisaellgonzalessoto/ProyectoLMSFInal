@@ -36,7 +36,7 @@ resource "aws_lambda_function" "learning_events_lambda" {
 }
 
 #funcion lambda para procesar archivos subidos del s3
-resource "aws_lambda_function" "process_submission" {
+resource "aws_lambda_function" "procesar_subidas" {
   filename      = "process_submission.zip"
   function_name = "lms-process-submission-${var.environment}"
   role          = aws_iam_role.lms_lambda_role.arn
@@ -66,7 +66,7 @@ resource "aws_lambda_permission" "allow_s3_invoke" {
 }
 
 #PROCESAR NOTIFICACIONES
-resource "aws_lambda_function" "notification_processor" {
+resource "aws_lambda_function" "procesador_notificaciones" {
   filename         = "notification_processor.zip"
   function_name    = "lms-notification-processor-${var.environment}"
   role             = aws_iam_role.lms_lambda_role.arn
@@ -90,7 +90,7 @@ resource "aws_lambda_function" "notification_processor" {
 }
 
 #SQS + Lambda
-resource "aws_lambda_event_source_mapping" "notifications_trigger" {
+resource "aws_lambda_event_source_mapping" "trigger_notificaciones" {
   event_source_arn                   = aws_sqs_queue.notifications.arn
   function_name                      = aws_lambda_function.notification_processor.arn
   batch_size                         = 10
@@ -100,7 +100,7 @@ resource "aws_lambda_event_source_mapping" "notifications_trigger" {
 }
 
 #PROCESAR EMAILS
-resource "aws_lambda_function" "email_processor" {
+resource "aws_lambda_function" "procesador_emails" {
   filename         = "email_processor.zip"
   function_name    = "lms-email-processor-${var.environment}"
   role             = aws_iam_role.lms_lambda_role.arn
@@ -133,7 +133,7 @@ resource "aws_lambda_event_source_mapping" "emails_trigger" {
   function_response_types = ["ReportBatchItemFailures"]
 }
 #SNS TOPIC PARA NOTIFICAIONES 
-resource "aws_sns_topic" "notifications" {
+resource "aws_sns_topic" "notificaciones" {
   name = "lms-notifications-topic-${var.environment}"
 
   tags = {
