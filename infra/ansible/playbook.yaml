@@ -1,0 +1,327 @@
+- name: Configurar infraestructura LMS
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+  
+  vars:
+    environment: dev
+    aws_region: us-east-1
+    project_name: lms
+    
+    # Directorios
+    config_dir: "{{ playbook_dir }}/config"
+    scripts_dir: "{{ playbook_dir }}/scripts"
+    docker_dir: "{{ playbook_dir }}/docker"
+    
+    # Imágenes Docker
+    frontend_image: "{{ ecr_registry }}/lms-frontend:{{ image_tag | default('latest') }}"
+    backend_image: "{{ ecr_registry }}/lms-backend:{{ image_tag | default('latest') }}"
+    
+  tasks:
+    - name: Verificar herramientas instaladas
+      block:
+        - name: Check AWS CLI
+          command: aws --version
+          register: aws_cli_version
+          changed_when: false
+          
+        - name: Check Docker
+          command: docker --version
+          register: docker_version
+          changed_when: false
+          
+        - name: Check jq (JSON processor)
+          command: jq --version
+          register: jq_version
+          changed_when: false
+          
+        - name: Mostrar versiones
+          debug:
+            msg:
+              - "AWS CLI: {{ aws_cli_version.stdout }}"
+              - "Docker: {{ docker_version.stdout }}"
+              - "jq: {{ jq_version.stdout }}"
+      tags: [prerequisites]
+
+    
+    - name: Obtener outputs de Terraform
+      block:
+        - name: Get Terraform outputs
+          command: terraform output -json
+          args:
+            chdir: "{{ playbook_dir }}/../terraform"
+          register: terraform_outputs_raw
+          changed_when: false
+          
+        - name: Parse Terraform outputs
+          set_fact:
+            tf_outputs: "{{ terraform_outputs_raw.stdout | from_json }}"
+            
+        - name: Extraer valores importantes
+          set_fact:
+            ecr_registry: "{{ lookup('env', 'AWS_ACCOUNT_ID') }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
+            vpc_id: "{{ tf_outputs.vpc_id.value }}"
+            alb_dns: "{{ tf_outputs.alb_dns_name.value }}"
+            aurora_endpoint: "{{ tf_outputs.aurora_cluster_endpoint.value }}"
+            s3_certificates_bucket: "{{ tf_outputs.certificates_bucket_name.value }}"
+            s3_resources_bucket: "{{ tf_outputs.educational_resources_bucket_name.value }}"
+            ecs_cluster_name: "{{ tf_outputs.ecs_cluster_name.value }}"
+      tags: [terraform]
+
+
+    - name: Crear estructura de directorios
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ config_dir }}"
+        - "{{ config_dir }}/nginx"
+        - "{{ config_dir }}/backend"
+        - "{{ scripts_dir }}"
+        - "{{ docker_dir }}"
+      tags: [setup]
+
+    - name: Configurar Aurora MySQL
+      block:
+        - name: Obtener credenciales de Secrets Manager
+          command: >
+            aws secretsmanager get-secret-value
+            --secret-id lms/aurora/credentials-{{ environment }}
+            --region {{ aws_region }}
+            --query SecretString
+            --output text
+          register: db_secret_raw
+          changed_when: false
+          no_log: true
+          
+        - name: Parse credenciales
+          set_fact:
+            db_credentials: "{{ db_secret_raw.stdout | from_json }}"
+          no_log: true
+          
+        - name: Crear script de inicialización de BD
+          template:
+            src: templates/init_database.sql.j2
+            dest: "{{ scripts_dir }}/init_database.sql"
+            mode: '0600'
+          vars:
+            db_name: "{{ db_credentials.dbname }}"
+            
+        - name: Ejecutar script de inicialización
+          command: >
+            mysql -h {{ db_credentials.host }}
+            -u {{ db_credentials.username }}
+            -p{{ db_credentials.password }}
+            < {{ scripts_dir }}/init_database.sql
+          when: initialize_database | default(false) | bool
+          no_log: true
+      tags: [database]
+
+    
+    - name: Build y push imágenes Docker
+      block:
+        - name: Login to ECR
+          shell: |
+            aws ecr get-login-password --region {{ aws_region }} | \
+            docker login --username AWS --password-stdin {{ ecr_registry }}
+          changed_when: false
+          
+        - name: Crear repositorios ECR si no existen
+          command: >
+            aws ecr describe-repositories
+            --repository-names lms-{{ item }}
+            --region {{ aws_region }}
+          register: ecr_check
+          failed_when: false
+          changed_when: false
+          loop:
+            - frontend
+            - backend
+            
+        - name: Crear repositorio ECR frontend
+          command: >
+            aws ecr create-repository
+            --repository-name lms-frontend
+            --region {{ aws_region }}
+          when: ecr_check.results[0].rc != 0
+          
+        - name: Crear repositorio ECR backend
+          command: >
+            aws ecr create-repository
+            --repository-name lms-backend
+            --region {{ aws_region }}
+          when: ecr_check.results[1].rc != 0
+          
+        - name: Build frontend Docker image
+          docker_image:
+            name: "{{ frontend_image }}"
+            build:
+              path: "{{ playbook_dir }}/../frontend"
+              dockerfile: Dockerfile
+            source: build
+            push: yes
+          when: build_frontend | default(true) | bool
+          
+        - name: Build backend Docker image
+          docker_image:
+            name: "{{ backend_image }}"
+            build:
+              path: "{{ playbook_dir }}/../backend"
+              dockerfile: Dockerfile
+            source: build
+            push: yes
+          when: build_backend | default(true) | bool
+      tags: [docker]
+
+  
+    - name: Configurar archivos de backend
+      block:
+        - name: Crear archivo .env para backend
+          template:
+            src: templates/backend.env.j2
+            dest: "{{ config_dir }}/backend/.env"
+            mode: '0600'
+          vars:
+            db_host: "{{ aurora_endpoint }}"
+            db_name: "{{ db_credentials.dbname }}"
+            s3_certificates: "{{ s3_certificates_bucket }}"
+            s3_resources: "{{ s3_resources_bucket }}"
+            
+        - name: Crear configuración de logging
+          template:
+            src: templates/logging.conf.j2
+            dest: "{{ config_dir }}/backend/logging.conf"
+            mode: '0644'
+      tags: [config]
+
+    - name: Configurar Nginx para frontend
+      block:
+        - name: Crear configuración Nginx
+          template:
+            src: templates/nginx.conf.j2
+            dest: "{{ config_dir }}/nginx/default.conf"
+            mode: '0644'
+          vars:
+            backend_url: "http://{{ alb_dns }}"
+            
+        - name: Validar configuración Nginx
+          command: nginx -t -c {{ config_dir }}/nginx/default.conf
+          changed_when: false
+          failed_when: false
+      tags: [nginx]
+    
+    - name: Actualizar ECS Services
+      block:
+        - name: Force new deployment - Frontend
+          command: >
+            aws ecs update-service
+            --cluster {{ ecs_cluster_name }}
+            --service lms-frontend-service-{{ environment }}
+            --force-new-deployment
+            --region {{ aws_region }}
+          when: deploy_frontend | default(false) | bool
+          
+        - name: Force new deployment - Backend
+          command: >
+            aws ecs update-service
+            --cluster {{ ecs_cluster_name }}
+            --service lms-backend-service-{{ environment }}
+            --force-new-deployment
+            --region {{ aws_region }}
+          when: deploy_backend | default(false) | bool
+          
+        - name: Esperar a que servicios estén estables
+          command: >
+            aws ecs wait services-stable
+            --cluster {{ ecs_cluster_name }}
+            --services lms-frontend-service-{{ environment }} lms-backend-service-{{ environment }}
+            --region {{ aws_region }}
+          when: deploy_frontend | default(false) | bool or deploy_backend | default(false) | bool
+      tags: [deploy]
+
+    
+    - name: Configurar buckets S3
+      block:
+        - name: Subir archivos estáticos al bucket de recursos
+          aws_s3:
+            bucket: "{{ s3_resources_bucket }}"
+            object: "shared/{{ item.key }}"
+            src: "{{ playbook_dir }}/../assets/{{ item.value }}"
+            mode: put
+            encrypt: yes
+          loop:
+            - { key: 'logo.png', value: 'logo.png' }
+            - { key: 'favicon.ico', value: 'favicon.ico' }
+          when: upload_assets | default(false) | bool
+          
+        - name: Crear estructura de carpetas en S3
+          aws_s3:
+            bucket: "{{ s3_resources_bucket }}"
+            object: "{{ item }}/"
+            mode: create
+          loop:
+            - courses
+            - courses/templates
+            - shared/images
+            - shared/videos
+          when: create_s3_structure | default(false) | bool
+      tags: [s3]
+
+
+    - name: Configurar retención de logs
+      block:
+        - name: Set log retention - Frontend
+          command: >
+            aws logs put-retention-policy
+            --log-group-name /ecs/lms-frontend-{{ environment }}
+            --retention-in-days 7
+            --region {{ aws_region }}
+          
+        - name: Set log retention - Backend
+          command: >
+            aws logs put-retention-policy
+            --log-group-name /ecs/lms-backend-{{ environment }}
+            --retention-in-days 7
+            --region {{ aws_region }}
+      tags: [logs]
+
+    - name: Ejecutar health checks
+      block:
+        - name: Wait for ALB to be ready
+          pause:
+            seconds: 30
+            
+        - name: Check ALB health
+          uri:
+            url: "http://{{ alb_dns }}/health"
+            method: GET
+            status_code: 200
+          register: health_check
+          retries: 5
+          delay: 10
+          until: health_check.status == 200
+          
+        - name: Check backend API
+          uri:
+            url: "http://{{ alb_dns }}/api/health"
+            method: GET
+            status_code: 200
+          register: api_health
+          retries: 5
+          delay: 10
+          until: api_health.status == 200
+          
+        - name: Verificar conexión a Aurora
+          command: >
+            mysql -h {{ db_credentials.host }}
+            -u {{ db_credentials.username }}
+            -p{{ db_credentials.password }}
+            -e "SELECT 1"
+          register: db_check
+          changed_when: false
+          no_log: true
+          
+        - name: Mostrar estado del sistema
+          debug:
+            msg:
