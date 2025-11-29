@@ -229,3 +229,152 @@ resource "aws_cloudwatch_dashboard" "lms_main" {
     ]
   })
 }
+
+#Alarmas para ECS (back front), aurora, lambda, alb y eso pues
+resource "aws_cloudwatch_metric_alarm" "frontend_cpu_high" {
+  alarm_name          = "lms-frontend-cpu-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "Frontend CPU superior al 80%"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ServiceName = aws_ecs_service.frontend.name
+    ClusterName = aws_ecs_cluster.lms_cluster.name
+  }
+}
+
+# Alarma: ECS Backend CPU Alta
+resource "aws_cloudwatch_metric_alarm" "backend_cpu_high" {
+  alarm_name          = "lms-backend-cpu-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "Backend CPU superior al 80%"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ServiceName = aws_ecs_service.backend.name
+    ClusterName = aws_ecs_cluster.lms_cluster.name
+  }
+}
+
+# Alarma: ECS Backend Memory Alta
+resource "aws_cloudwatch_metric_alarm" "backend_memory_high" {
+  alarm_name          = "lms-backend-memory-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "85"
+  alarm_description   = "Backend Memoria superior al 85%"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ServiceName = aws_ecs_service.backend.name
+    ClusterName = aws_ecs_cluster.lms_cluster.name
+  }
+}
+
+# Alarma: ALB Response Time Alto
+resource "aws_cloudwatch_metric_alarm" "alb_response_time_high" {
+  alarm_name          = "lms-alb-response-time-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "TargetResponseTime"
+  namespace           = "AWS/ApplicationELB"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "2"
+  alarm_description   = "Response time superior a 2 segundos"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    LoadBalancer = aws_lb.lms_alb.arn_suffix
+  }
+}
+
+# Alarma: ALB Errores 5xx
+resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
+  alarm_name          = "lms-alb-5xx-errors-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "HTTPCode_Target_5XX_Count"
+  namespace           = "AWS/ApplicationELB"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "10"
+  alarm_description   = "Más de 10 errores 5xx en 5 minutos"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    LoadBalancer = aws_lb.lms_alb.arn_suffix
+  }
+}
+
+# Alarma: Aurora CPU Alta
+resource "aws_cloudwatch_metric_alarm" "aurora_cpu_high" {
+  alarm_name          = "lms-aurora-cpu-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "Aurora CPU superior al 80%"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
+  }
+}
+
+# Alarma: Aurora Conexiones Alta
+resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
+  alarm_name          = "lms-aurora-connections-high-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "DatabaseConnections"
+  namespace           = "AWS/RDS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "500"
+  alarm_description   = "Más de 500 conexiones a Aurora"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
+  }
+}
+
+# Alarma: Lambda Errores
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  alarm_name          = "lms-lambda-errors-${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "5"
+  alarm_description   = "Más de 5 errores en Lambda en 5 minutos"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.notification_processor.function_name
+  }
+}
+
+
