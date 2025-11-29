@@ -407,3 +407,74 @@ resource "aws_iam_role_policy" "ecs_task_lambda_invoke" {
     ]
   })
 }
+
+#PERMISOS PARA LAMBDA
+# Permiso para recibir mensajes de SQS
+data "aws_iam_policy_document" "lambda_sqs_policy" {
+  statement {
+    sid    = "AllowSQSOperations"
+    effect = "Allow"
+
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:ChangeMessageVisibility"
+    ]
+
+    resources = [
+      aws_sqs_queue.notifications.arn,
+      aws_sqs_queue.emails.arn
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_sqs_access" {
+  name   = "lms-lambda-sqs-access"
+  role   = aws_iam_role.lms_lambda_role.id
+  policy = data.aws_iam_policy_document.lambda_sqs_policy.json
+}
+
+# Permiso para publicar en SNS
+data "aws_iam_policy_document" "lambda_sns_policy" {
+  statement {
+    sid    = "AllowSNSPublish"
+    effect = "Allow"
+
+    actions = [
+      "sns:Publish"
+    ]
+
+    resources = [
+      aws_sns_topic.notifications.arn
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_sns_access" {
+  name   = "lms-lambda-sns-access"
+  role   = aws_iam_role.lms_lambda_role.id
+  policy = data.aws_iam_policy_document.lambda_sns_policy.json
+}
+
+# Permiso para enviar emails con SES
+data "aws_iam_policy_document" "lambda_ses_policy" {
+  statement {
+    sid    = "AllowSESSend"
+    effect = "Allow"
+
+    actions = [
+      "ses:SendEmail",
+      "ses:SendRawEmail",
+      "ses:SendTemplatedEmail"
+    ]
+
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_ses_access" {
+  name   = "lms-lambda-ses-access"
+  role   = aws_iam_role.lms_lambda_role.id
+  policy = data.aws_iam_policy_document.lambda_ses_policy.json
+}
