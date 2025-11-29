@@ -108,3 +108,19 @@ output "sns_topic_arn" {
   description = "ARN del topic SNS de notificaciones"
   value       = aws_sns_topic.notifications.arn
 }
+
+#OUTPUTS PARA CLW MONITOREO
+output "dashboard_url" {
+  description = "URL del dashboard de CloudWatch"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.myregion}#dashboards:name=${aws_cloudwatch_dashboard.lms_main.dashboard_name}"
+}
+
+output "alarm_names" {
+  description = "Nombres de todas las alarmas creadas"
+  value = [
+    aws_cloudwatch_metric_alarm.frontend_cpu_high.alarm_name,
+    aws_cloudwatch_metric_alarm.backend_cpu_high.alarm_name,
+    aws_cloudwatch_metric_alarm.aurora_cpu_high.alarm_name,
+    aws_cloudwatch_metric_alarm.alb_5xx_errors.alarm_name
+  ]
+}
