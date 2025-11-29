@@ -330,4 +330,45 @@
             - "Conexión a BD Aurora exitosa"
       tags: [healthcheck]
 
-      
+
+#TAREAS DE OPTIMIZACION
+    - name: Optimizar y limpiar recursos antiguos
+      block:
+        - name: Limpiar imágenes Docker antiguas en ECR
+          shell: |
+            aws ecr list-images \
+              --repository-name lms-{{ item }} \
+              --region {{ aws_region }} \
+              --filter tagStatus=UNTAGGED \
+              --query 'imageIds[*]' \
+              --output json | \
+            jq -r '.[] | .imageDigest' | \
+            while read digest; do
+              aws ecr batch-delete-image \
+                --repository-name lms-{{ item }} \
+                --image-ids imageDigest=$digest \
+                --region {{ aws_region }}
+            done
+          loop:
+            - frontend
+            - backend
+          when: cleanup_ecr | default(false) | bool
+          
+        - name: Eliminar task definitions antiguas
+          shell: |
+            aws ecs list-task-definitions \
+              --family-prefix lms-{{ item }}-{{ environment }} \
+              --status INACTIVE \
+              --region {{ aws_region }} \
+              --query 'taskDefinitionArns[0:10]' \
+              --output text | \
+            xargs -n 1 aws ecs deregister-task-definition \
+              --task-definition \
+              --region {{ aws_region }}
+          loop:
+            - frontend
+            - backend
+          when: cleanup_tasks | default(false) | bool
+      tags: [cleanup]
+
+
