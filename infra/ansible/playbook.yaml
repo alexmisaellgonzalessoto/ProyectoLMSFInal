@@ -325,3 +325,9 @@
         - name: Mostrar estado del sistema
           debug:
             msg:
+            - "ALB esta bien: todo OK"
+            - "Backend api ok: Todo bien"
+            - "Conexión a BD Aurora exitosa"
+      tags: [healthcheck]
+
+      
