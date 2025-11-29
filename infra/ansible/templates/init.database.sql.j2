@@ -1,0 +1,94 @@
+-- Inicialización de base de datos
+
+USE {{ db_name }};
+
+-- Tabla de usuarios
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    role ENUM('student', 'teacher', 'admin') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_email (email),
+    INDEX idx_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de cursos
+CREATE TABLE IF NOT EXISTS courses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    teacher_id INT NOT NULL,
+    status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_teacher (teacher_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de inscripciones
+CREATE TABLE IF NOT EXISTS enrollments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('active', 'completed', 'dropped') DEFAULT 'active',
+    progress DECIMAL(5,2) DEFAULT 0.00,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_enrollment (student_id, course_id),
+    INDEX idx_student (student_id),
+    INDEX idx_course (course_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de tareas
+CREATE TABLE IF NOT EXISTS assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    due_date TIMESTAMP NULL,
+    max_points INT DEFAULT 100,
+    s3_key VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    INDEX idx_course (course_id),
+    INDEX idx_due_date (due_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de entregas
+CREATE TABLE IF NOT EXISTS submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    assignment_id INT NOT NULL,
+    student_id INT NOT NULL,
+    s3_key VARCHAR(500) NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    grade DECIMAL(5,2),
+    feedback TEXT,
+    FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_assignment (assignment_id),
+    INDEX idx_student (student_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de certificados
+CREATE TABLE IF NOT EXISTS certificates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    s3_key VARCHAR(500) NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_certificate (student_id, course_id),
+    INDEX idx_student (student_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insertar usuario admin por defecto
+INSERT INTO users (email, password_hash, first_name, last_name, role)
+VALUES ('admin@lms.local', '$2b$12$placeholder', 'Admin', 'LMS', 'admin')
+ON DUPLICATE KEY UPDATE email=email;
