@@ -371,4 +371,15 @@
           when: cleanup_tasks | default(false) | bool
       tags: [cleanup]
 
-
+#HANDLERS
+  handlers:
+    - name: Restart ECS services
+      command: >
+        aws ecs update-service
+        --cluster {{ ecs_cluster_name }}
+        --service {{ item }}
+        --force-new-deployment
+        --region {{ aws_region }}
+      loop:
+        - lms-frontend-service-{{ environment }}
+        - lms-backend-service-{{ environment }}
