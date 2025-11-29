@@ -81,3 +81,30 @@ output "backend_service_name" {
   description = "ECS Back"
   value       = aws_ecs_service.backend_service.name
 }
+
+#OUTPUTS SQS Y SNS
+
+output "notifications_queue_url" {
+  description = "URL de la cola de notificaciones"
+  value       = aws_sqs_queue.notifications.url
+}
+
+output "notifications_queue_arn" {
+  description = "ARN de la cola de notificaciones"
+  value       = aws_sqs_queue.notifications.arn
+}
+
+output "emails_queue_url" {
+  description = "URL de la cola de emails"
+  value       = aws_sqs_queue.emails.url
+}
+
+output "dlq_url" {
+  description = "URL de la Dead Letter Queue"
+  value       = aws_sqs_queue.notifications_dlq.url
+}
+
+output "sns_topic_arn" {
+  description = "ARN del topic SNS de notificaciones"
+  value       = aws_sns_topic.notifications.arn
+}
