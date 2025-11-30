@@ -323,23 +323,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
   }
 }
 
-# Alarma: Aurora Conexiones Alta
-resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
-  alarm_name          = "lms-aurora-connections-high-${var.environment}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "DatabaseConnections"
-  namespace           = "AWS/RDS"
-  period              = "300"
-  statistic           = "Average"
-  threshold           = "500"
-  alarm_description   = "Más de 500 conexiones a Aurora"
-  treat_missing_data  = "notBreaching"
 
-  dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
-  }
-}
 
 
 
