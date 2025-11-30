@@ -323,24 +323,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
   }
 }
 
-# Alarma: Aurora CPU Alta
-resource "aws_cloudwatch_metric_alarm" "aurora_cpu_high" {
-  alarm_name          = "lms-aurora-cpu-high-${var.environment}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/RDS"
-  period              = "300"
-  statistic           = "Average"
-  threshold           = "80"
-  alarm_description   = "Aurora CPU superior al 80%"
-  treat_missing_data  = "notBreaching"
-
-  dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
-  }
-}
-
 # Alarma: Aurora Conexiones Alta
 resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
   alarm_name          = "lms-aurora-connections-high-${var.environment}"
