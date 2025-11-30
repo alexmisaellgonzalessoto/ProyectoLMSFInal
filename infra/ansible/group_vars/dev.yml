@@ -1,0 +1,18 @@
+---
+env: dev
+
+# Backend configuration
+backend_cpu: "512"
+backend_memory: "1024"
+backend_desired_count: 1
+
+# Frontend configuration
+frontend_cpu: "256"
+frontend_memory: "512"
+frontend_desired_count: 1
+
+# Database
+aurora_instance_class: db.t3.medium
+
+# Logging más verbose en dev
+log_level: debug
