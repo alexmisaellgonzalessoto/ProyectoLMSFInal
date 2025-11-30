@@ -4,7 +4,7 @@
   gather_facts: yes
   
   vars:
-    environment: dev
+    env: dev
     aws_region: us-east-1
     project_name: lms
     
@@ -87,7 +87,7 @@
         - name: Obtener credenciales de Secrets Manager
           command: >
             aws secretsmanager get-secret-value
-            --secret-id lms/aurora/credentials-{{ environment }}
+            --secret-id lms/aurora/credentials-{{ env }}
             --region {{ aws_region }}
             --query SecretString
             --output text
@@ -217,7 +217,7 @@
           command: >
             aws ecs update-service
             --cluster {{ ecs_cluster_name }}
-            --service lms-frontend-service-{{ environment }}
+            --service lms-frontend-service-{{ env }}
             --force-new-deployment
             --region {{ aws_region }}
           when: deploy_frontend | default(false) | bool
@@ -226,7 +226,7 @@
           command: >
             aws ecs update-service
             --cluster {{ ecs_cluster_name }}
-            --service lms-backend-service-{{ environment }}
+            --service lms-backend-service-{{ env }}
             --force-new-deployment
             --region {{ aws_region }}
           when: deploy_backend | default(false) | bool
@@ -235,7 +235,7 @@
           command: >
             aws ecs wait services-stable
             --cluster {{ ecs_cluster_name }}
-            --services lms-frontend-service-{{ environment }} lms-backend-service-{{ environment }}
+            --services lms-frontend-service-{{ env }} lms-backend-service-{{ environment }}
             --region {{ aws_region }}
           when: deploy_frontend | default(false) | bool or deploy_backend | default(false) | bool
       tags: [deploy]
@@ -274,14 +274,14 @@
         - name: Set log retention - Frontend
           command: >
             aws logs put-retention-policy
-            --log-group-name /ecs/lms-frontend-{{ environment }}
+            --log-group-name /ecs/lms-frontend-{{ env}}
             --retention-in-days 7
             --region {{ aws_region }}
           
         - name: Set log retention - Backend
           command: >
             aws logs put-retention-policy
-            --log-group-name /ecs/lms-backend-{{ environment }}
+            --log-group-name /ecs/lms-backend-{{ env }}
             --retention-in-days 7
             --region {{ aws_region }}
       tags: [logs]
@@ -357,7 +357,7 @@
         - name: Eliminar task definitions antiguas
           shell: |
             aws ecs list-task-definitions \
-              --family-prefix lms-{{ item }}-{{ environment }} \
+              --family-prefix lms-{{ item }}-{{ env }} \
               --status INACTIVE \
               --region {{ aws_region }} \
               --query 'taskDefinitionArns[0:10]' \
@@ -381,5 +381,5 @@
         --force-new-deployment
         --region {{ aws_region }}
       loop:
-        - lms-frontend-service-{{ environment }}
-        - lms-backend-service-{{ environment }}
+        - lms-frontend-service-{{ env }}
+        - lms-backend-service-{{ env }}
