@@ -341,22 +341,5 @@ resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
   }
 }
 
-# Alarma: Lambda Errores
-resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
-  alarm_name          = "lms-lambda-errors-${var.environment}"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "Errors"
-  namespace           = "AWS/Lambda"
-  period              = "300"
-  statistic           = "Sum"
-  threshold           = "5"
-  alarm_description   = "Más de 5 errores en Lambda en 5 minutos"
-  treat_missing_data  = "notBreaching"
-
-  dimensions = {
-    FunctionName = aws_lambda_function.notification_processor.function_name
-  }
-}
 
 
