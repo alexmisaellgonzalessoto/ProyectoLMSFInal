@@ -1,0 +1,20 @@
+# AWS Configuration
+aws_region: us-east-1
+project_name: lms
+
+# Configuración de imágenes
+image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+
+# Flags de ejecución (por defecto deshabilitados)
+initialize_database: false
+build_frontend: false
+build_backend: false
+deploy_frontend: false
+deploy_backend: false
+upload_assets: false
+create_s3_structure: false
+cleanup_ecr: false
+cleanup_tasks: false
+
+# Logging
+log_level: info
