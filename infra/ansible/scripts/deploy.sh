@@ -67,3 +67,113 @@ provision_infrastructure() {
 }
 
 # Desplegar con ansible
+configure_systems() {
+    log_info "Desplegando configuración con Ansible..."
+    cd ansible
+
+    ansible-galaxy collection install -r requirements.yml
+    #playbook
+    ansible-playbook playbook.yml \
+        -e "environment=$ENVIRONMENT" \
+        -e "build_frontend=true" \
+        -e "build_backend=true" \
+        -e "deploy_frontend=true" \
+        -e "deploy_backend=true" \
+        --tags "all,!cleanup"
+    log_info "Configuración desplegada"
+    cd ..
+}
+
+#Iniicar base de datos
+init_database() {
+    log_info "Inicializando base de datos..."
+    
+    cd ansible
+    
+    ansible-playbook playbook.yaml \
+        -e "environment=$ENVIRONMENT" \
+        -e "initialize_database=true" \
+        --tags "database"
+    log_info "Base de datos inicializada"
+    cd ..
+}
+#olo build de imágenes
+build_images() {
+    log_info "Construyendo imágenes Docker..."
+    
+    cd ansible
+    
+    ansible-playbook playbook.yaml \
+        -e "environment=$ENVIRONMENT" \
+        -e "build_frontend=true" \
+        -e "build_backend=true" \
+        --tags "docker"
+    log_info "Imágenes Docker construidas"
+    cd ..
+}
+# Main
+case $ACTION in
+    provision)
+        check_prerequisites
+        provision_infrastructure
+        ;;
+    configure)
+        check_prerequisites
+        configure_system
+        ;;
+    deploy)
+        check_prerequisites
+        provision_infrastructure
+        configure_system
+        ;;
+    init-db)
+        check_prerequisites
+        init_database
+        ;;
+    build)
+        check_prerequisites
+        build_images
+        ;;
+    deploy-only)
+        check_prerequisites
+        deploy_only
+        ;;
+    cleanup)
+        check_prerequisites
+        cleanup
+        ;;
+    rollback)
+        check_prerequisites
+        rollback
+        ;;
+    logs)
+        show_logs
+        ;;
+    destroy)
+        destroy
+        ;;
+    *)
+        echo "Uso: $0 <environment> <action>"
+        echo ""
+        echo "Environments: dev, staging, prod"
+        echo ""
+        echo "Actions:"
+        echo "  provision    - Solo Terraform (infraestructura)"
+        echo "  configure    - Solo Ansible (configuración)"
+        echo "  deploy       - Full deployment (Terraform + Ansible)"
+        echo "  init-db      - Inicializar base de datos"
+        echo "  build        - Solo construir imágenes Docker"
+        echo "  deploy-only  - Solo deploy sin rebuild"
+        echo "  cleanup      - Limpiar recursos antiguos"
+        echo "  rollback     - Volver al deployment anterior"
+        echo "  logs         - Ver logs (añade: frontend|backend)"
+        echo ""
+        echo "  $0 dev deploy"
+        echo "  $0 prod deploy-only"
+        echo "  $0 dev logs backend"
+        exit 1
+        ;;
+esac
+
+echo ""
+log_info "Script completado exitosamente amigo"
