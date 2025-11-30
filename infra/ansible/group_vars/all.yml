@@ -5,7 +5,7 @@ project_name: lms
 # Configuración de imágenes
 image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
 
-# Flags de ejecución (por defecto deshabilitados)
+# Flags de ejecución
 initialize_database: false
 build_frontend: false
 build_backend: false
