@@ -1,6 +1,5 @@
 locals {
-  # VPC
-  vpc_id = aws_vpc.lms_vpc.id
+
 
   # Subnets públicas (para ALB, NAT Gateway)
   public_subnet_ids = [
