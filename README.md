@@ -2,7 +2,7 @@
 > Infraestructura como código para un Sistema de Gestión de Aprendizaje (LMS) escalable y de alta disponibilidad en AWS.
 
 
-## Equipo de Desarrollo - JalCubo xD
+## Equipo de Desarrollo - JalCubo 
 
 **Universidad Privada Antenor Orrego (UPAO)**
 
@@ -158,99 +158,6 @@ chmod +x scripts/deploy.sh
 - **Amazon ECR** - Registro de imágenes
 
 
-## Comandos Útiles
-
-```bash
-# Ver estado de la infraestructura
-cd terraform && terraform show
-
-# Ver outputs
-terraform output
-
-# Ver servicios ECS
-aws ecs list-services --cluster lms-cluster-dev
-
-# Ver logs en tiempo real
-cd ansible && ./scripts/deploy.sh dev logs backend
-
-# Health check
-./scripts/check-health.sh dev
-
-# Actualizar solo código (sin rebuild infra)
-./scripts/deploy.sh dev deploy-only
-
-# Rollback
-./scripts/deploy.sh dev rollback
-```
-
----
-
-## Costos Estimados
-
-### Ambiente Development (24/7)
-
-| Recurso | Configuración | Costo Mensual |
-|---------|---------------|---------------|
-| ECS Fargate | 4 tasks (0.5 vCPU, 1GB) | ~$30 |
-| Aurora MySQL | db.t3.medium (1 writer) | ~$50 |
-| ALB | 1 ALB | ~$20 |
-| NAT Gateway | 1 NAT | ~$35 |
-| S3 | 100 GB | ~$3 |
-| CloudWatch | Logs + Metrics | ~$10 |
-| **TOTAL** | | **~$148/mes** |
-
-### Ambiente Production (24/7)
-
-| Recurso | Configuración | Costo Mensual |
-|---------|---------------|---------------|
-| ECS Fargate | 8 tasks (1 vCPU, 2GB) | ~$120 |
-| Aurora MySQL | db.r6g.large (1 writer + 1 reader) | ~$230 |
-| ElastiCache | cache.t3.medium | ~$50 |
-| ALB | 1 ALB | ~$20 |
-| NAT Gateway | 2 NAT (HA) | ~$70 |
-| S3 | 500 GB + Glacier | ~$15 |
-| WAF | Web ACL + Rules | ~$10 |
-| CloudWatch | Dashboards + Alarms | ~$20 |
-| **TOTAL** | | **~$535/mes** |
-
- **Optimizaciones posibles:**
-- Usar Fargate Spot (-70% en compute)
-- Reserved Instances para Aurora (-40%)
-- S3 Intelligent Tiering
-
----
-
-## Testing
-
-```bash
-# Unit tests de Terraform
-cd terraform
-terraform fmt -check
-terraform validate
-
-# Ansible syntax check
-cd ansible
-ansible-playbook playbook.yaml --syntax-check
-
-# Integration tests
-./scripts/check-health.sh dev
-```
-
----
-
-## CI/CD
-
-El proyecto está preparado para integrarse con:
-
-- **GitHub Actions** - Deployment automático
-- **GitLab CI** - Pipelines de infraestructura
-- **Jenkins** - Build y deployment
-
-
-
-
-
----
 
 <div align="center">
 
