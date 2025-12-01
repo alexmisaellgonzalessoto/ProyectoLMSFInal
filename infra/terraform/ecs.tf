@@ -304,6 +304,14 @@ resource "aws_appautoscaling_policy" "frontend_cpu_scaling" {
     scale_out_cooldown = 60
   }
 }
+resource "aws_appautoscaling_target" "frontend_target" {
+  max_capacity       = 4
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.lms_cluster.name}/${aws_ecs_service.frontend_service.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
 
 #AUTOSCALING BACKEND
 resource "aws_appautoscaling_policy" "backend_cpu_scaling" {
@@ -321,4 +329,11 @@ resource "aws_appautoscaling_policy" "backend_cpu_scaling" {
     scale_in_cooldown  = 300
     scale_out_cooldown = 60
   }
+}
+resource "aws_appautoscaling_target" "backend_target" {
+  max_capacity       = 4
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.lms_cluster.name}/${aws_ecs_service.backend_service.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
 }
