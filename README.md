@@ -4,7 +4,7 @@
 
 ## Equipo de Desarrollo - JalCubo 
 
-**Universidad Privada Antenor Orrego (UPAO)**
+**Universidad Privada Antenor Orrego  (UPAO)**
 
 | Integrante | Rol |
 |------------|-----|
