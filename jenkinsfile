@@ -18,7 +18,7 @@ pipeline {
                 script {
 
 
-                    dir("IAC/infra/tf") {
+                    dir("infra/tf") {
                         sh 'terraform init'
                         sh "terraform plan -out tfplan"
 
@@ -39,7 +39,7 @@ pipeline {
                script {
   
 
-                   def plan = readFile 'IAC/infra/tf/tfplan.txt' 
+                   def plan = readFile 'infra/tf/tfplan.txt' 
                    
                    input message: "Do you want to apply the plan?",
                    parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
@@ -51,7 +51,7 @@ pipeline {
             steps {
                 script {
 
-                    dir("IAC/infra/tf") {
+                    dir("infra/tf") {
                         sh "terraform apply -input=false tfplan"
                     }
                 }
