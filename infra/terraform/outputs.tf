@@ -8,6 +8,11 @@ output "alb_arn" {
   value       = aws_lb.lms_alb.arn
 }
 
+output "waf_web_acl_arn" {
+  description = "ARN del Web ACL de AWS WAF"
+  value       = var.enable_waf ? aws_wafv2_web_acl.lms_waf[0].arn : null
+}
+
 output "frontend_target_group_arn" {
   description = "ARN del Target Group Frontend"
   value       = aws_lb_target_group.frontend.arn
