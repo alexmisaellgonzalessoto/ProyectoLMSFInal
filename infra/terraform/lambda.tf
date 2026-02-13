@@ -35,20 +35,20 @@ resource "aws_lambda_function" "learning_events_lambda" {
   runtime       = "python3.12"
   timeout       = 30
   memory_size   = 256
-  
+
   # VPC Configuration para conectarse a Aurora
   vpc_config {
-    subnet_ids         = local.private_subnet_ids  # Mismas subnets que Aurora
+    subnet_ids         = local.private_subnet_ids # Mismas subnets que Aurora
     security_group_ids = [aws_security_group.lambda_sg.id]
   }
-  
+
   environment {
     variables = {
-      ENVIRONMENT       = var.environment
-      EVENT_BUS_NAME    = "lms-events-bus"
-      DB_SECRET_ARN     = aws_secretsmanager_secret.aurora_credentials.arn
-      DB_HOST           = aws_rds_cluster.aurora_cluster.endpoint
-      DB_NAME           = "lms_database"
+      ENVIRONMENT    = var.environment
+      EVENT_BUS_NAME = aws_cloudwatch_event_bus.lms_events_bus.name
+      DB_SECRET_ARN  = aws_secretsmanager_secret.aurora_credentials.arn
+      DB_HOST        = aws_rds_cluster.aurora_cluster.endpoint
+      DB_NAME        = "lms_database"
     }
   }
 }
@@ -87,14 +87,14 @@ resource "aws_lambda_permission" "allow_s3_invoke" {
 
 #PROCESAR NOTIFICACIONES
 resource "aws_lambda_function" "notification_processor" {
-  count            = var.enable_optional_lambdas ? 1 : 0
-  filename         = "notification_processor.zip"
-  function_name    = "lms-notification-processor-${var.environment}"
-  role             = aws_iam_role.lms_lambda_role.arn
-  handler          = "index.handler"
-  runtime          = "python3.12"
-  timeout          = 50
-  memory_size      = 256
+  count                          = var.enable_optional_lambdas ? 1 : 0
+  filename                       = "notification_processor.zip"
+  function_name                  = "lms-notification-processor-${var.environment}"
+  role                           = aws_iam_role.lms_lambda_role.arn
+  handler                        = "index.handler"
+  runtime                        = "python3.12"
+  timeout                        = 50
+  memory_size                    = 256
   reserved_concurrent_executions = 10
 
   environment {
@@ -117,26 +117,26 @@ resource "aws_lambda_event_source_mapping" "trigger_notificaciones" {
   function_name                      = aws_lambda_function.notification_processor[0].arn
   batch_size                         = 10
   maximum_batching_window_in_seconds = 5
-  
+
   function_response_types = ["ReportBatchItemFailures"]
 }
 
 #PROCESAR EMAILS
 resource "aws_lambda_function" "email_processor" {
-  count            = var.enable_optional_lambdas ? 1 : 0
-  filename         = "email_processor.zip"
-  function_name    = "lms-email-processor-${var.environment}"
-  role             = aws_iam_role.lms_lambda_role.arn
-  handler          = "index.handler"
-  runtime          = "python3.12"
-  timeout          = 50
-  memory_size      = 256
+  count                          = var.enable_optional_lambdas ? 1 : 0
+  filename                       = "email_processor.zip"
+  function_name                  = "lms-email-processor-${var.environment}"
+  role                           = aws_iam_role.lms_lambda_role.arn
+  handler                        = "index.handler"
+  runtime                        = "python3.12"
+  timeout                        = 50
+  memory_size                    = 256
   reserved_concurrent_executions = 5
 
   environment {
     variables = {
-      ENVIRONMENT   = var.environment
-      SES_FROM_EMAIL   = var.ses_from_email
+      ENVIRONMENT    = var.environment
+      SES_FROM_EMAIL = var.ses_from_email
     }
   }
 
@@ -153,7 +153,7 @@ resource "aws_lambda_event_source_mapping" "emails_trigger" {
   function_name                      = aws_lambda_function.email_processor[0].arn
   batch_size                         = 5
   maximum_batching_window_in_seconds = 3
-  
+
   function_response_types = ["ReportBatchItemFailures"]
 }
 #SNS TOPIC PARA NOTIFICAIONES 
