@@ -113,6 +113,7 @@ resource "aws_api_gateway_method_settings" "lms_all_methods" {
 
   settings {
     caching_enabled      = true
+    cache_data_encrypted = true
     cache_ttl_in_seconds = 300
   }
 }
