@@ -201,6 +201,14 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "AWS_REGION"
           value = var.myregion
+        },
+        {
+          name  = "REDIS_HOST"
+          value = aws_elasticache_replication_group.redis.primary_endpoint_address
+        },
+        {
+          name  = "REDIS_PORT"
+          value = "6379"
         }
       ]
 
@@ -271,6 +279,14 @@ resource "aws_ecs_task_definition" "auth" {
         {
           name  = "PORT"
           value = "3001"
+        },
+        {
+          name  = "REDIS_HOST"
+          value = aws_elasticache_replication_group.redis.primary_endpoint_address
+        },
+        {
+          name  = "REDIS_PORT"
+          value = "6379"
         }
       ]
 
