@@ -99,6 +99,8 @@ resource "aws_rds_cluster" "aurora_cluster" {
 
   # Protección contra eliminación accidental (solo prod)
   deletion_protection = var.environment == "prod" ? true : false
+  skip_final_snapshot = var.environment != "prod"
+  final_snapshot_identifier = var.environment == "prod" ? "lms-aurora-final-${var.environment}-${formatdate("YYYYMMDDhhmmss", timestamp())}" : null
 
   # Habilitar logs
   enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery"]
