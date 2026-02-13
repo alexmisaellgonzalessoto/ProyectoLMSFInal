@@ -3,12 +3,12 @@ data "aws_iam_policy_document" "lambda_assume_role" {
   statement {
     sid    = "AllowLambdaAssumeRole"
     effect = "Allow"
-    
+
     principals {
       type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
     }
-    
+
     actions = ["sts:AssumeRole"]
   }
 }
@@ -35,11 +35,11 @@ data "aws_iam_policy_document" "lms_eventbridge_policy" {
   statement {
     sid    = "AllowPutEventsToLMSBus"
     effect = "Allow"
-    
+
     actions = [
       "events:PutEvents"
     ]
-    
+
     resources = [
       "arn:aws:events:${var.myregion}:${var.accountId}:event-bus/lms-events-bus"
     ]
@@ -58,25 +58,25 @@ data "aws_iam_policy_document" "lms_s3_policy" {
   statement {
     sid    = "ListAllBuckets"
     effect = "Allow"
-    
+
     actions = [
       "s3:ListAllMyBuckets",
       "s3:GetBucketLocation",
     ]
-    
+
     resources = [
       "arn:aws:s3:::*",
     ]
   }
-# Listar contenido del bucket de certificados
+  # Listar contenido del bucket de certificados
   statement {
     sid    = "ListCertificatesBucket"
     effect = "Allow"
-    
+
     actions = [
       "s3:ListBucket",
     ]
-    
+
     resources = [
       "arn:aws:s3:::${var.lms_certificates_bucket}",
     ]
@@ -86,13 +86,13 @@ data "aws_iam_policy_document" "lms_s3_policy" {
   statement {
     sid    = "ManageCertificates"
     effect = "Allow"
-    
+
     actions = [
       "s3:PutObject",
       "s3:GetObject",
       "s3:DeleteObject",
     ]
-    
+
     resources = [
       "arn:aws:s3:::${var.lms_certificates_bucket}/*",
     ]
@@ -102,12 +102,12 @@ data "aws_iam_policy_document" "lms_s3_policy" {
   statement {
     sid    = "AccessEducationalResources"
     effect = "Allow"
-    
+
     actions = [
       "s3:GetObject",
       "s3:PutObject",
     ]
-    
+
     resources = [
       "arn:aws:s3:::${var.lms_resources_bucket}/*",
     ]
@@ -117,12 +117,12 @@ data "aws_iam_policy_document" "lms_s3_policy" {
   statement {
     sid    = "AccessStudentSubmissions"
     effect = "Allow"
-    
+
     actions = [
       "s3:PutObject",
       "s3:GetObject",
     ]
-    
+
     resources = [
       "arn:aws:s3:::${var.lms_submissions_bucket}/students/*",
     ]
@@ -151,11 +151,11 @@ data "aws_iam_policy_document" "lms_sns_policy" {
   statement {
     sid    = "AllowPublishToSNS"
     effect = "Allow"
-    
+
     actions = [
       "sns:Publish",
     ]
-    
+
     resources = [
       "arn:aws:sns:${var.myregion}:${var.accountId}:lms-notifications-topic"
     ]
@@ -173,14 +173,14 @@ data "aws_iam_policy_document" "lms_sqs_policy" {
   statement {
     sid    = "AllowSQSOperations"
     effect = "Allow"
-    
+
     actions = [
       "sqs:SendMessage",
       "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes",
     ]
-    
+
     resources = [
       "arn:aws:sqs:${var.myregion}:${var.accountId}:lms-notifications-queue",
       "arn:aws:sqs:${var.myregion}:${var.accountId}:lms-notifications-dlq",
@@ -199,12 +199,12 @@ data "aws_iam_policy_document" "lms_ses_policy" {
   statement {
     sid    = "AllowSendEmail"
     effect = "Allow"
-    
+
     actions = [
       "ses:SendEmail",
       "ses:SendTemplatedEmail",
     ]
-    
+
     resources = ["*"]
   }
 }
@@ -220,12 +220,12 @@ data "aws_iam_policy_document" "lms_secrets_manager_policy" {
   statement {
     sid    = "AllowGetDatabaseCredentials"
     effect = "Allow"
-    
+
     actions = [
       "secretsmanager:GetSecretValue",
       "secretsmanager:DescribeSecret",
     ]
-    
+
     resources = [
       "arn:aws:secretsmanager:${var.myregion}:${var.accountId}:secret:lms/aurora/credentials-*"
     ]
@@ -354,6 +354,30 @@ resource "aws_iam_role_policy" "ecs_task_lambda_invoke" {
         ]
         Resource = [
           aws_lambda_function.learning_events_lambda.arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "ecs_task_image_worker_sqs" {
+  name = "lms-ecs-image-worker-sqs"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:ChangeMessageVisibility",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl"
+        ]
+        Resource = [
+          aws_sqs_queue.image_processing.arn
         ]
       }
     ]

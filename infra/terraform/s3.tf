@@ -275,3 +275,22 @@ resource "aws_kms_key_policy" "s3_kms_policy" {
     ]
   })
 }
+
+# Notificacion de objetos subidos para disparar flujo de procesamiento de imagenes
+resource "aws_s3_bucket_notification" "submissions_to_image_queue" {
+  bucket = aws_s3_bucket.student_submissions.id
+
+  queue {
+    queue_arn     = aws_sqs_queue.image_processing.arn
+    events        = ["s3:ObjectCreated:*"]
+    filter_suffix = ".jpg"
+  }
+
+  queue {
+    queue_arn     = aws_sqs_queue.image_processing.arn
+    events        = ["s3:ObjectCreated:*"]
+    filter_suffix = ".png"
+  }
+
+  depends_on = [aws_sqs_queue_policy.image_processing_policy]
+}
