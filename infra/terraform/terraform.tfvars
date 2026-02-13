@@ -6,3 +6,5 @@ enable_https_listener   = false
 enable_optional_lambdas = false
 frontend_desired_count  = 0
 backend_desired_count   = 0
+auth_desired_count      = 0
+worker_desired_count    = 0
