@@ -376,6 +376,78 @@ resource "aws_ecs_service" "auth_service" {
   }
 }
 
+#TAREA WORKER
+resource "aws_ecs_task_definition" "image_worker" {
+  family                   = "lms-image-worker-${var.environment}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.worker_cpu
+  memory                   = var.worker_memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "image-worker"
+      image     = var.worker_image
+      essential = true
+
+      environment = [
+        {
+          name  = "NODE_ENV"
+          value = var.environment
+        },
+        {
+          name  = "AWS_REGION"
+          value = var.myregion
+        },
+        {
+          name  = "IMAGE_QUEUE_URL"
+          value = aws_sqs_queue.image_processing.url
+        },
+        {
+          name  = "SUBMISSIONS_BUCKET"
+          value = aws_s3_bucket.student_submissions.id
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.backend_logs.name
+          "awslogs-region"        = var.myregion
+          "awslogs-stream-prefix" = "image-worker"
+        }
+      }
+    }
+  ])
+
+  tags = {
+    Name        = "lms-image-worker-task"
+    Environment = var.environment
+  }
+}
+
+#ECS SERVICE WORKER
+resource "aws_ecs_service" "image_worker_service" {
+  name            = "lms-image-worker-service-${var.environment}"
+  cluster         = aws_ecs_cluster.lms_cluster.id
+  task_definition = aws_ecs_task_definition.image_worker.arn
+  desired_count   = var.worker_desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = local.private_subnet_ids
+    security_groups  = [aws_security_group.ecs_tasks_sg.id]
+    assign_public_ip = false
+  }
+
+  tags = {
+    Name        = "lms-image-worker-service"
+    Environment = var.environment
+  }
+}
+
 #AUTOSCALING FRONTEND
 resource "aws_appautoscaling_policy" "frontend_cpu_scaling" {
   name               = "lms-frontend-cpu-scaling-${var.environment}"
@@ -425,4 +497,38 @@ resource "aws_appautoscaling_target" "backend_target" {
   resource_id        = "service/${aws_ecs_cluster.lms_cluster.name}/${aws_ecs_service.backend_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+}
+
+#AUTOSCALING WORKER POR COLA SQS
+resource "aws_appautoscaling_target" "worker_target" {
+  max_capacity       = 6
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.lms_cluster.name}/${aws_ecs_service.image_worker_service.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "worker_sqs_scaling" {
+  name               = "lms-worker-sqs-scaling-${var.environment}"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.worker_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.worker_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.worker_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    customized_metric_specification {
+      metric_name = "ApproximateNumberOfMessagesVisible"
+      namespace   = "AWS/SQS"
+      statistic   = "Average"
+
+      dimensions {
+        name  = "QueueName"
+        value = aws_sqs_queue.image_processing.name
+      }
+    }
+
+    target_value       = 5
+    scale_in_cooldown  = 120
+    scale_out_cooldown = 60
+  }
 }

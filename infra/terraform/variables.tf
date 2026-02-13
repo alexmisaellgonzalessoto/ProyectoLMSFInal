@@ -119,6 +119,12 @@ variable "auth_image" {
   default     = "node:18-alpine"
 }
 
+variable "worker_image" {
+  description = "Imagen Docker del image-worker-service"
+  type        = string
+  default     = "node:18-alpine"
+}
+
 variable "frontend_cpu" {
   description = "CPU para frontend (256, 512, 1024, 2048, 4096)"
   type        = string
@@ -155,6 +161,18 @@ variable "auth_memory" {
   default     = "512"
 }
 
+variable "worker_cpu" {
+  description = "CPU para image-worker-service"
+  type        = string
+  default     = "256"
+}
+
+variable "worker_memory" {
+  description = "Memoria para image-worker-service"
+  type        = string
+  default     = "512"
+}
+
 variable "frontend_desired_count" {
   description = "Número de tareas frontend"
   type        = number
@@ -169,6 +187,12 @@ variable "backend_desired_count" {
 
 variable "auth_desired_count" {
   description = "Numero de tareas auth-service"
+  type        = number
+  default     = 1
+}
+
+variable "worker_desired_count" {
+  description = "Numero de tareas image-worker-service"
   type        = number
   default     = 1
 }

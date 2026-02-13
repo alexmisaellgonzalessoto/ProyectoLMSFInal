@@ -92,6 +92,11 @@ output "auth_service_name" {
   value       = aws_ecs_service.auth_service.name
 }
 
+output "image_worker_service_name" {
+  description = "ECS Image Worker"
+  value       = aws_ecs_service.image_worker_service.name
+}
+
 #OUTPUTS SQS Y SNS
 
 output "notifications_queue_url" {
@@ -107,6 +112,11 @@ output "notifications_queue_arn" {
 output "emails_queue_url" {
   description = "URL de la cola de emails"
   value       = aws_sqs_queue.emails.url
+}
+
+output "image_processing_queue_url" {
+  description = "URL de la cola de procesamiento de imagenes"
+  value       = aws_sqs_queue.image_processing.url
 }
 
 output "dlq_url" {
