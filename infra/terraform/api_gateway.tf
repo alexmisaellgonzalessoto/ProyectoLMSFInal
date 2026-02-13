@@ -9,6 +9,10 @@ resource "aws_api_gateway_rest_api" "api" {
     Name        = "lms-api"
     Environment = var.environment
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_api_gateway_resource" "resource" {
