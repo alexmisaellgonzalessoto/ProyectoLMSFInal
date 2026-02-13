@@ -64,6 +64,8 @@ resource "aws_api_gateway_stage" "lms_stage" {
   deployment_id = aws_api_gateway_deployment.lms_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = var.environment
+  cache_cluster_enabled = true
+  cache_cluster_size    = "0.5"
 
   tags = {
     Name        = "lms-api-${var.environment}"
