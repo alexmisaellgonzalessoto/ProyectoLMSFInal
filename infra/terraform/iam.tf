@@ -40,9 +40,7 @@ data "aws_iam_policy_document" "lms_eventbridge_policy" {
       "events:PutEvents"
     ]
 
-    resources = [
-      "arn:aws:events:${var.myregion}:${var.accountId}:event-bus/lms-events-bus"
-    ]
+    resources = [aws_cloudwatch_event_bus.lms_events_bus.arn]
   }
 }
 

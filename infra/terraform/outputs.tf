@@ -159,3 +159,8 @@ output "http_api_vpc_link_url" {
   description = "URL de API Gateway HTTP API con VPC Link hacia ALB"
   value       = var.enable_http_api_vpc_link ? aws_apigatewayv2_api.lms_http_api[0].api_endpoint : null
 }
+
+output "eventbridge_bus_name" {
+  description = "Nombre del EventBridge Bus del LMS"
+  value       = aws_cloudwatch_event_bus.lms_events_bus.name
+}
