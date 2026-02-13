@@ -18,6 +18,11 @@ output "backend_target_group_arn" {
   value       = aws_lb_target_group.backend.arn
 }
 
+output "auth_target_group_arn" {
+  description = "ARN del Target Group Auth"
+  value       = aws_lb_target_group.auth.arn
+}
+
 #OUTPUTS AURORA
 output "aurora_cluster_endpoint" {
   description = "Endpoint del cluster Aurora (escritura)"
@@ -80,6 +85,11 @@ output "frontend_service_name" {
 output "backend_service_name" {
   description = "ECS Back"
   value       = aws_ecs_service.backend_service.name
+}
+
+output "auth_service_name" {
+  description = "ECS Auth"
+  value       = aws_ecs_service.auth_service.name
 }
 
 #OUTPUTS SQS Y SNS

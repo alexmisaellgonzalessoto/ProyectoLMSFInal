@@ -113,6 +113,12 @@ variable "backend_image" {
   default     = "node:18-alpine" # Cambiar por tu imagen real
 }
 
+variable "auth_image" {
+  description = "Imagen Docker del servicio de autenticacion"
+  type        = string
+  default     = "node:18-alpine"
+}
+
 variable "frontend_cpu" {
   description = "CPU para frontend (256, 512, 1024, 2048, 4096)"
   type        = string
@@ -137,6 +143,18 @@ variable "backend_memory" {
   default     = "1024"
 }
 
+variable "auth_cpu" {
+  description = "CPU para auth-service"
+  type        = string
+  default     = "256"
+}
+
+variable "auth_memory" {
+  description = "Memoria para auth-service"
+  type        = string
+  default     = "512"
+}
+
 variable "frontend_desired_count" {
   description = "Número de tareas frontend"
   type        = number
@@ -147,6 +165,12 @@ variable "backend_desired_count" {
   description = "Número de tareas backend"
   type        = number
   default     = 2
+}
+
+variable "auth_desired_count" {
+  description = "Numero de tareas auth-service"
+  type        = number
+  default     = 1
 }
 
 #VARIABLE PARA SQS
