@@ -2,7 +2,7 @@
 > Infraestructura como código para un Sistema de Gestión de Aprendizaje (LMS) escalable y de alta disponibilidad en AWS.
 
 
-## Equipo de Desarrollo - JalCubo 
+## Equipo de Desarrollo - LMS
 
 **Universidad Privada Antenor Orrego  (UPAO)**
 
