@@ -98,6 +98,30 @@ resource "aws_lb_target_group" "backend" {
   }
 }
 
+# Auth API
+resource "aws_lb_target_group" "auth" {
+  name        = "lms-auth-tg"
+  port        = 3001
+  protocol    = "HTTP"
+  vpc_id      = local.vpc_id
+  target_type = "ip" # Para Fargate
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    path                = "/health"
+    protocol            = "HTTP"
+    matcher             = "200"
+  }
+
+  tags = {
+    Name = "lms-auth-tg"
+  }
+}
+
 # Listener HTTP cuando HTTPS no está habilitado
 resource "aws_lb_listener" "http_forward" {
   count             = var.enable_https_listener ? 0 : 1
@@ -156,6 +180,23 @@ resource "aws_lb_listener_rule" "backend_api" {
   condition {
     path_pattern {
       values = ["/api/*"]
+    }
+  }
+}
+
+# Listener Rule - Rutas /auth/* al servicio de autenticacion
+resource "aws_lb_listener_rule" "auth_api" {
+  listener_arn = local.alb_listener_arn
+  priority     = 90
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.auth.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/auth/*"]
     }
   }
 }

@@ -30,7 +30,7 @@ resource "aws_security_group" "ecs_tasks_sg" {
   description = "Security group para ECS Fargate tasks"
   vpc_id      = local.vpc_id
 
-ingress {
+  ingress {
     description     = "HTTP from ALB"
     from_port       = 3000
     to_port         = 3000
@@ -42,6 +42,14 @@ ingress {
     description     = "Backend API from ALB"
     from_port       = 8000
     to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  ingress {
+    description     = "Auth API from ALB"
+    from_port       = 3001
+    to_port         = 3001
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
@@ -86,7 +94,7 @@ resource "aws_ecs_task_definition" "frontend" {
       name      = "frontend"
       image     = var.frontend_image
       essential = true
-      
+
       portMappings = [
         {
           containerPort = 3000
@@ -149,7 +157,7 @@ resource "aws_ecs_task_definition" "backend" {
       name      = "backend"
       image     = var.backend_image
       essential = true
-      
+
       portMappings = [
         {
           containerPort = 8000
@@ -232,6 +240,65 @@ resource "aws_ecs_task_definition" "backend" {
   }
 }
 
+#TAREA AUTH
+resource "aws_ecs_task_definition" "auth" {
+  family                   = "lms-auth-${var.environment}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.auth_cpu
+  memory                   = var.auth_memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "auth"
+      image     = var.auth_image
+      essential = true
+
+      portMappings = [
+        {
+          containerPort = 3001
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "NODE_ENV"
+          value = var.environment
+        },
+        {
+          name  = "PORT"
+          value = "3001"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.backend_logs.name
+          "awslogs-region"        = var.myregion
+          "awslogs-stream-prefix" = "auth"
+        }
+      }
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ])
+
+  tags = {
+    Name        = "lms-auth-task"
+    Environment = var.environment
+  }
+}
+
 #ECS SERVICE FRONTED
 resource "aws_ecs_service" "frontend_service" {
   name            = "lms-frontend-service-${var.environment}"
@@ -241,8 +308,8 @@ resource "aws_ecs_service" "frontend_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = local.private_subnet_ids
-    security_groups = [aws_security_group.ecs_tasks_sg.id]
+    subnets          = local.private_subnet_ids
+    security_groups  = [aws_security_group.ecs_tasks_sg.id]
     assign_public_ip = false
   }
 
@@ -266,8 +333,8 @@ resource "aws_ecs_service" "backend_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = local.private_subnet_ids
-    security_groups = [aws_security_group.ecs_tasks_sg.id]
+    subnets          = local.private_subnet_ids
+    security_groups  = [aws_security_group.ecs_tasks_sg.id]
     assign_public_ip = false
   }
 
@@ -279,6 +346,32 @@ resource "aws_ecs_service" "backend_service" {
 
   tags = {
     Name        = "lms-backend-service"
+    Environment = var.environment
+  }
+}
+
+#ECS SERVICE AUTH
+resource "aws_ecs_service" "auth_service" {
+  name            = "lms-auth-service-${var.environment}"
+  cluster         = aws_ecs_cluster.lms_cluster.id
+  task_definition = aws_ecs_task_definition.auth.arn
+  desired_count   = var.auth_desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = local.private_subnet_ids
+    security_groups  = [aws_security_group.ecs_tasks_sg.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.auth.arn
+    container_name   = "auth"
+    container_port   = 3001
+  }
+
+  tags = {
+    Name        = "lms-auth-service"
     Environment = var.environment
   }
 }
