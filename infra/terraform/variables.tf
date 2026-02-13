@@ -47,6 +47,13 @@ variable "public_subnet_ids" {
 variable "certificate_arn" {
   description = "ARN del certificado SSL en ACM"
   type        = string
+  default     = ""
+}
+
+variable "enable_https_listener" {
+  description = "Habilita listener HTTPS en ALB (requiere certificate_arn valido)"
+  type        = bool
+  default     = false
 }
 variable "lms_certificates_bucket" {
   description = "Cerficados"
@@ -147,4 +154,10 @@ variable "ses_from_email" {
   description = "Email verificado en SES para enviar notificaciones"
   type        = string
   default     = "noreply@lms.tuescuela.edu"
+}
+
+variable "enable_optional_lambdas" {
+  description = "Crea lambdas opcionales que dependen de archivos zip locales"
+  type        = bool
+  default     = false
 }

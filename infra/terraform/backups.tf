@@ -54,9 +54,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "backups_lifecycle" {
       storage_class = "GLACIER"
     }
 
-    # Mover a Deep Archive después de 30 días
+    # Debe ser al menos 90 días después de la transición previa a Glacier.
     transition {
-      days          = 30
+      days          = 91
       storage_class = "DEEP_ARCHIVE"
     }
 
