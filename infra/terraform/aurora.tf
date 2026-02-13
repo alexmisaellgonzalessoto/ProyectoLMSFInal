@@ -39,7 +39,8 @@ resource "aws_db_subnet_group" "aurora_subnet_group" {
 resource "random_password" "aurora_password" {
   length           = 32
   special          = true
-  override_special = "!@#$%&*()-_=+[]{}<>:?"
+  # RDS no permite '/', '@', '"' ni espacios en MasterUserPassword.
+  override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
 resource "aws_kms_key" "aurora_kms" {
@@ -60,7 +61,7 @@ resource "aws_kms_alias" "aurora_kms_alias" {
 
 #Guardar credenciales en Secrets Manager
 resource "aws_secretsmanager_secret" "aurora_credentials" {
-  name        = "lms/aurora/credentials-${var.environment}"
+  name        = "lms/aurora/credentials-${var.environment}-${var.accountId}"
   description = "Credenciales de Aurora MySQL para LMS"
 
   tags = {

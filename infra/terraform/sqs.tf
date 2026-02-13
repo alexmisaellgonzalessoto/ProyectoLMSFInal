@@ -63,10 +63,27 @@ data "aws_iam_policy_document" "sqs_send_policy" {
       "sqs:GetQueueUrl"
     ]
 
-    resources = [
-      aws_sqs_queue.notifications.arn,
-      aws_sqs_queue.emails.arn
+    resources = [aws_sqs_queue.notifications.arn]
+  }
+}
+
+data "aws_iam_policy_document" "sqs_send_policy_emails" {
+  statement {
+    sid    = "AllowECSSendMessages"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.ecs_task_role.arn]
+    }
+
+    actions = [
+      "sqs:SendMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl"
     ]
+
+    resources = [aws_sqs_queue.emails.arn]
   }
 }
 
@@ -77,5 +94,5 @@ resource "aws_sqs_queue_policy" "notifications_policy" {
 
 resource "aws_sqs_queue_policy" "emails_policy" {
   queue_url = aws_sqs_queue.emails.url
-  policy    = data.aws_iam_policy_document.sqs_send_policy.json
+  policy    = data.aws_iam_policy_document.sqs_send_policy_emails.json
 }

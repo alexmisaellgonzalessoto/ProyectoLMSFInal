@@ -252,8 +252,6 @@ resource "aws_ecs_service" "frontend_service" {
     container_port   = 3000
   }
 
-  depends_on = [aws_lb_listener.https]
-
   tags = {
     Name        = "lms-frontend-service"
     Environment = var.environment
@@ -278,8 +276,6 @@ resource "aws_ecs_service" "backend_service" {
     container_name   = "backend"
     container_port   = 8000
   }
-
-  depends_on = [aws_lb_listener.https]
 
   tags = {
     Name        = "lms-backend-service"
