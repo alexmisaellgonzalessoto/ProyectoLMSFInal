@@ -28,17 +28,20 @@ variable "api_name" {
 }
 variable "s3_bucket_name" {
   description = "No se que nonmbre poner xD"
-  type        = string 
+  type        = string
+  default     = ""
 }
 #VARIABLES VPC
 variable "vpc_id" {
   description = "ID de la VPC"
   type        = string
+  default     = ""
 }
 
 variable "public_subnet_ids" {
   description = "IDs de subnets públicas para el ALB"
   type        = list(string)
+  default     = []
 }
 
 variable "certificate_arn" {
