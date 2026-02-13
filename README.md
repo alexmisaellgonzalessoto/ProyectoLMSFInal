@@ -302,21 +302,6 @@ Por que:
 Resultado:
 - `terraform destroy` en dev deja de bloquearse por snapshot final.
 
-#### `61a3433` - `docs(readme): update team names and real terraform workflow`
-
-Que se hizo:
-- Se actualizaron integrantes:
-  - Gonzales Soto Alex
-  - Tisnado Guevara Anthony
-- Se actualizo flujo real de SSO + Terraform.
-- Se agrego troubleshooting de errores comunes.
-
-Por que:
-- README desactualizado respecto a implementacion real.
-
-Resultado:
-- Documentacion alineada al proceso ejecutado.
-
 ### Estado Operativo
 
 - Se pudo ejecutar `terraform apply` completo con salida de `Apply complete`.
@@ -343,10 +328,7 @@ Resultado:
 
 
 
-<div align="center">
+## Nota Final
 
-**Si este proyecto te fue útil, dile al profesor Leturia que nos apruebe IAC, si entendimos iac PZ**
-
-No se que hicimos pero nos desvelamos - UPAO 2026
-
-</div>
+Proyecto orientado a despliegue y pruebas en AWS con Terraform.
+Para evitar costos innecesarios, ejecutar siempre `terraform destroy` al finalizar la validacion.
