@@ -1,7 +1,7 @@
 resource "aws_api_gateway_rest_api" "api" {
   name        = var.api_name
   description = "API Gateway para LMS - Integración Lambda"
-  
+
   endpoint_configuration {
     types = ["REGIONAL"]
   }
@@ -41,11 +41,11 @@ resource "aws_api_gateway_integration" "lambda_integration" {
 #Api deploymet omgg
 resource "aws_api_gateway_deployment" "lms_deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  
+
   depends_on = [
     aws_api_gateway_integration.lambda_integration
   ]
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -59,14 +59,37 @@ resource "aws_api_gateway_deployment" "lms_deployment" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "api_gateway_access_logs" {
+  name              = "/aws/apigateway/lms-${var.environment}"
+  retention_in_days = 365
+
+  tags = {
+    Name        = "lms-apigw-access-logs"
+    Environment = var.environment
+  }
+}
+
 
 resource "aws_api_gateway_stage" "lms_stage" {
-  deployment_id = aws_api_gateway_deployment.lms_deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = var.environment
+  deployment_id         = aws_api_gateway_deployment.lms_deployment.id
+  rest_api_id           = aws_api_gateway_rest_api.api.id
+  stage_name            = var.environment
   cache_cluster_enabled = true
   cache_cluster_size    = "0.5"
   xray_tracing_enabled  = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_access_logs.arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      responseLength = "$context.responseLength"
+    })
+  }
 
   tags = {
     Name        = "lms-api-${var.environment}"
@@ -75,7 +98,7 @@ resource "aws_api_gateway_stage" "lms_stage" {
 }
 #Ess necesario poner esto para la autenticacion con cognito profe?
 #resource "aws_api_gateway_authorizer" "jwt_auth" {
- # name            = "lms-jwt-authorizer"
-  #rest_api_id     = aws_api_gateway_rest_api.lms_api.id
-  #type            = "COGNITO_USER_POOLS"
-  #provider_arns   = [aws_cognito_user_pool.lms_users.arn]
+# name            = "lms-jwt-authorizer"
+#rest_api_id     = aws_api_gateway_rest_api.lms_api.id
+#type            = "COGNITO_USER_POOLS"
+#provider_arns   = [aws_cognito_user_pool.lms_users.arn]
