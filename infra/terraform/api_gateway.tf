@@ -85,11 +85,13 @@ resource "aws_api_gateway_stage" "lms_stage" {
     format = jsonencode({
       requestId      = "$context.requestId"
       ip             = "$context.identity.sourceIp"
+      userAgent      = "$context.identity.userAgent"
       requestTime    = "$context.requestTime"
       httpMethod     = "$context.httpMethod"
       routeKey       = "$context.routeKey"
       status         = "$context.status"
       responseLength = "$context.responseLength"
+      integrationError = "$context.integrationErrorMessage"
     })
   }
 
@@ -101,6 +103,8 @@ resource "aws_api_gateway_stage" "lms_stage" {
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [aws_cloudwatch_log_group.api_gateway_access_logs]
 }
 
 resource "aws_api_gateway_method_settings" "lms_all_methods" {
