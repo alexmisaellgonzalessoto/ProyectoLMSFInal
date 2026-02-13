@@ -71,7 +71,7 @@ output "backups_bucket_name" {
 #OUTPUTS ECS
 output "ecs_cluster_name" {
   description = "Cluster ECS"
-  value       = aws_ecs_cluster.lms_ecs_cluster.name
+  value       = aws_ecs_cluster.lms_cluster.name
 }
 output "frontend_service_name" {
   description = "ECS front"

@@ -222,10 +222,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "submissions_lifecycle" {
     }
 
     # Eliminar pero segun politicas consideradas por el equipo
-    #expiration {
-      #days = 730
-    }
+    # expiration {
+    #   days = 730
+    # }
   }
+}
 
 resource "aws_kms_key" "s3_kms" {
   description             = "KMS key para encriptación de buckets S3 del LMS"

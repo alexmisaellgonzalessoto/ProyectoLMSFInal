@@ -247,12 +247,12 @@ resource "aws_ecs_service" "frontend_service" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.frontend_tg.arn
+    target_group_arn = aws_lb_target_group.frontend.arn
     container_name   = "frontend"
     container_port   = 3000
   }
 
-  depends_on = [aws_lb_listener.https_listener]
+  depends_on = [aws_lb_listener.https]
 
   tags = {
     Name        = "lms-frontend-service"
@@ -274,12 +274,12 @@ resource "aws_ecs_service" "backend_service" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.backend_tg.arn
+    target_group_arn = aws_lb_target_group.backend.arn
     container_name   = "backend"
     container_port   = 8000
   }
 
-  depends_on = [aws_lb_listener.https_listener]
+  depends_on = [aws_lb_listener.https]
 
   tags = {
     Name        = "lms-backend-service"

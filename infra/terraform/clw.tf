@@ -244,7 +244,7 @@ resource "aws_cloudwatch_metric_alarm" "frontend_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ServiceName = aws_ecs_service.frontend.name
+    ServiceName = aws_ecs_service.frontend_service.name
     ClusterName = aws_ecs_cluster.lms_cluster.name
   }
 }
@@ -263,7 +263,7 @@ resource "aws_cloudwatch_metric_alarm" "backend_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ServiceName = aws_ecs_service.backend.name
+    ServiceName = aws_ecs_service.backend_service.name
     ClusterName = aws_ecs_cluster.lms_cluster.name
   }
 }
@@ -282,7 +282,7 @@ resource "aws_cloudwatch_metric_alarm" "backend_memory_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ServiceName = aws_ecs_service.backend.name
+    ServiceName = aws_ecs_service.backend_service.name
     ClusterName = aws_ecs_cluster.lms_cluster.name
   }
 }
@@ -322,7 +322,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
     LoadBalancer = aws_lb.lms_alb.arn_suffix
   }
 }
-
 
 
 
