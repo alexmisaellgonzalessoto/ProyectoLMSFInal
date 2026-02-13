@@ -8,9 +8,8 @@
 
 | Integrante | Rol |
 |------------|-----|
-| **Junior** | DevOps Engineer |
-| **Joel** | Cloud Architect |
-| **Jeremy** | Infrastructure Developer |
+| **Gonzales Soto Alex** | DevOps Engineer |
+| **Tisnado Guevara Anthony** | Cloud Architect |
 
 ---
 
@@ -124,20 +123,63 @@ cd lms-infrastructure
 ### Configurar Credenciales AWS
 
 ```bash
-aws configure
-# Ingresar:
-# - AWS Access Key ID
-# - AWS Secret Access Key
-# - Region: us-east-1
-# - Output format: json
+aws configure sso
+# Perfil recomendado:
+# AdministratorAccess-218085830508
 ```
 
-### Deployment Automático
+### Flujo de Terraform (recomendado para pruebas)
 
 ```bash
-cd ansible
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh dev deploy
+cd /home/alex/IAC/infra/terraform
+aws sso login --profile AdministratorAccess-218085830508
+export AWS_PROFILE=AdministratorAccess-218085830508
+export AWS_REGION=us-east-1
+
+terraform init -backend=false
+terraform validate
+terraform plan
+terraform apply
+
+# Al terminar pruebas/demo (evitar costos):
+terraform destroy
+```
+
+### Variables de entorno para demo de bajo costo
+
+Archivo: `infra/terraform/terraform.tfvars`
+
+```hcl
+accountId               = "218085830508"
+environment             = "dev"
+domain_name             = "tudominio.com"
+myregion                = "us-east-1"
+
+enable_https_listener   = false
+enable_optional_lambdas = false
+frontend_desired_count  = 0
+backend_desired_count   = 0
+```
+
+### Validación rápida post-deploy
+
+```bash
+terraform output
+aws sts get-caller-identity
+```
+
+### Troubleshooting común
+
+- `No valid credential sources found`:
+  Ejecutar `aws sso login --profile AdministratorAccess-218085830508` y exportar `AWS_PROFILE`.
+- `Error acquiring the state lock`:
+  Cerrar procesos terraform previos y reintentar.
+- `CertificateNotFound`:
+  Usar `enable_https_listener = false` en dev o configurar `certificate_arn` válido en ACM.
+- `reading ZIP file ... no such file`:
+  Mantener `enable_optional_lambdas = false` si no existen zips de funciones opcionales.
+- `RDS Cluster final_snapshot_identifier is required` al destroy:
+  En `dev` se usa `skip_final_snapshot = true` en el código actual.
 
 ## Tecnologías Utilizadas
 
