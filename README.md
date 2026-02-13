@@ -19,11 +19,11 @@ Este proyecto implementa una infraestructura para un Sistema de Gestion de Apren
 
 ### Objetivos
 
--  Desplegar la plataforma LMS en AWS con Terraform, desde red hasta servicios de aplicacion.
--  Corregir errores reales de despliegue detectados en pruebas (`apply` y `destroy`) para tener un flujo estable.
--  Estandarizar autenticacion con AWS SSO y variables de entorno para ejecucion segura desde terminal.
--  Reducir costos de pruebas con configuracion `dev` (servicios opcionales desactivados y escalado minimo).
--  Documentar el proceso paso a paso con troubleshooting de los errores encontrados durante la implementacion.
+-  Automatizar el aprovisionamiento de infraestructura del LMS en AWS usando Terraform.
+-  Desplegar servicios de aplicacion en ECS Fargate con balanceador ALB y autoescalado.
+-  Implementar persistencia con Aurora MySQL y almacenamiento en S3 con cifrado, versionado y lifecycle.
+-  Integrar mensajeria asincrona con SQS y SNS, y endpoints con API Gateway + Lambda.
+-  Estandarizar ejecucion con AWS SSO y parametros `dev` para pruebas de bajo costo.
 
 ---
 
@@ -37,12 +37,11 @@ Este proyecto implementa una infraestructura para un Sistema de Gestion de Apren
 | **Computo** | ECS Fargate | Ejecucion de frontend y backend en tareas administradas |
 | **Base de datos** | Aurora MySQL | Persistencia principal del LMS y manejo de credenciales con Secrets Manager |
 | **Almacenamiento** | S3 | Buckets para recursos, entregas, certificados y backups con cifrado/versionado |
-| **Cache** | ElastiCache Redis | Soporte de cache para mejorar tiempos de respuesta |
 | **Red** | VPC, subnets publicas/privadas, ALB, NAT | Aislamiento de servicios y enrutamiento interno/externo |
-| **Seguridad** | Security Groups, IAM, KMS, Secrets Manager, WAF | Control de acceso, cifrado y proteccion perimetral |
+| **Seguridad** | Security Groups, IAM, KMS, Secrets Manager | Control de acceso y cifrado de datos y credenciales |
 | **Monitoreo** | CloudWatch | Alarmas, metricas y tableros para seguimiento operativo |
 | **Mensajeria** | SQS, SNS | Comunicacion asincrona y desacople entre componentes |
-| **Orquestacion** | Lambda, API Gateway, EventBridge | Integraciones por eventos y endpoints del sistema |
+| **Integracion** | Lambda, API Gateway | Endpoints y funciones de procesamiento en segundo plano |
 | **Operacion IaC** | Terraform + Ansible | Provisionamiento, ajustes y ejecucion repetible del entorno |
 
 ---
