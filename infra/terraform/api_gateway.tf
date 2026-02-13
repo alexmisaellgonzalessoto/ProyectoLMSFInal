@@ -101,6 +101,17 @@ resource "aws_api_gateway_stage" "lms_stage" {
     create_before_destroy = true
   }
 }
+
+resource "aws_api_gateway_method_settings" "lms_all_methods" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_stage.lms_stage.stage_name
+  method_path = "*/*"
+
+  settings {
+    caching_enabled      = true
+    cache_ttl_in_seconds = 300
+  }
+}
 #Ess necesario poner esto para la autenticacion con cognito profe?
 #resource "aws_api_gateway_authorizer" "jwt_auth" {
 # name            = "lms-jwt-authorizer"
