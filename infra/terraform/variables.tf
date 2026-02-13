@@ -92,6 +92,12 @@ variable "aurora_instance_class" {
   default     = "db.t3.medium"
 }
 
+variable "redis_node_type" {
+  description = "Tipo de nodo para ElastiCache Redis"
+  type        = string
+  default     = "cache.t3.micro"
+}
+
 #variable para desarrollo de s3 (Su dominio)
 # variables.tf
 variable "domain_name" {

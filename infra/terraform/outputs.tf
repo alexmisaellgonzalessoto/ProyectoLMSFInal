@@ -47,6 +47,11 @@ output "aurora_secret_arn" {
   sensitive   = true
 }
 
+output "redis_primary_endpoint" {
+  description = "Endpoint primario de ElastiCache Redis"
+  value       = aws_elasticache_replication_group.redis.primary_endpoint_address
+}
+
 #OUTPUTS S3
 output "certificates_bucket_name" {
   description = "Bucket certificados"
