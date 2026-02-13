@@ -183,10 +183,10 @@ resource "aws_rds_cluster_instance" "aurora_writer" {
   publicly_accessible     = false
   db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
   
-  # Performance Insights
-  performance_insights_enabled    = true
-  performance_insights_kms_key_id = aws_kms_key.aurora_kms.arn
-  performance_insights_retention_period = 7
+  # Performance Insights solo en prod para evitar incompatibilidades/costo en dev.
+  performance_insights_enabled           = var.environment == "prod"
+  performance_insights_kms_key_id        = var.environment == "prod" ? aws_kms_key.aurora_kms.arn : null
+  performance_insights_retention_period  = var.environment == "prod" ? 7 : null
   
   # Monitoreo avanzado
   monitoring_interval = 60
@@ -210,10 +210,10 @@ resource "aws_rds_cluster_instance" "aurora_reader" {
   publicly_accessible     = false
   db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
   
-  # Performance Insights
-  performance_insights_enabled    = true
-  performance_insights_kms_key_id = aws_kms_key.aurora_kms.arn
-  performance_insights_retention_period = 7
+  # Performance Insights solo en prod para evitar incompatibilidades/costo en dev.
+  performance_insights_enabled           = var.environment == "prod"
+  performance_insights_kms_key_id        = var.environment == "prod" ? aws_kms_key.aurora_kms.arn : null
+  performance_insights_retention_period  = var.environment == "prod" ? 7 : null
   
   # Monitoreo avanzado
   monitoring_interval = 60
