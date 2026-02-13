@@ -1,7 +1,7 @@
 resource "aws_security_group" "alb_sg" {
   name        = "lms-alb-sg"
   description = "Security group para ALB del LMS"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
 
   # HTTP desde API Gateway
   ingress {
@@ -55,7 +55,7 @@ resource "aws_lb_target_group" "frontend" {
   name        = "lms-frontend-tg"
   port        = 3000
   protocol    = "HTTP"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
   target_type = "ip"  # Para Fargate
 
   health_check {
@@ -79,7 +79,7 @@ resource "aws_lb_target_group" "backend" {
   name        = "lms-backend-tg"
   port        = 8000
   protocol    = "HTTP"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
   target_type = "ip"  # Para Fargate
 
   health_check {
