@@ -25,7 +25,7 @@ resource "aws_api_gateway_method" "post_learning_event" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.resource.id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "AWS_IAM"
 }
 
 #integracion con lambda jejeje
