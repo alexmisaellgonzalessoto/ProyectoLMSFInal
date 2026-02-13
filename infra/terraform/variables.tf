@@ -221,3 +221,9 @@ variable "enable_http_api_vpc_link" {
   type        = bool
   default     = true
 }
+
+variable "enable_waf" {
+  description = "Habilita AWS WAF asociado al ALB"
+  type        = bool
+  default     = true
+}
