@@ -9,7 +9,7 @@
 | Integrante | Rol |
 |------------|-----|
 | **Gonzales Soto Alex** | DevOps |
-| **Tisnado Guevara Anthony** | Arquitectura Cloud |
+| **Tisnado Guevara Anthony** | Arquitectura en la nube |
 
 ---
 
@@ -19,11 +19,11 @@ Este proyecto implementa una infraestructura para un Sistema de Gestion de Apren
 
 ### Objetivos
 
--  Automatizar el aprovisionamiento de infraestructura en AWS
--  Implementar CI/CD con Terraform y Ansible
--  Garantizar alta disponibilidad y tolerancia a picos altos de trafico de red
--  Optimizar costos mediante autoscaling y lifecycle policies
--  Asegurar la seguridad con WAF, KMS y Secrets Manager
+-  Desplegar la plataforma LMS en AWS con Terraform, desde red hasta servicios de aplicacion.
+-  Corregir errores reales de despliegue detectados en pruebas (`apply` y `destroy`) para tener un flujo estable.
+-  Estandarizar autenticacion con AWS SSO y variables de entorno para ejecucion segura desde terminal.
+-  Reducir costos de pruebas con configuracion `dev` (servicios opcionales desactivados y escalado minimo).
+-  Documentar el proceso paso a paso con troubleshooting de los errores encontrados durante la implementacion.
 
 ---
 
@@ -34,15 +34,16 @@ Este proyecto implementa una infraestructura para un Sistema de Gestion de Apren
 
 | Componente | Tecnología | Propósito |
 |------------|------------|-----------|
-| **Compute** | ECS Fargate | Contenedores sin servidor |
-| **Database** | Aurora MySQL | Base de datos relacional |
-| **Storage** | S3 | Certificados, recursos, tareas |
-| **Cache** | ElastiCache Redis | Caché de aplicación |
-| **Networking** | VPC, ALB, NAT Gateway | Red privada y balanceo |
-| **Security** | WAF, KMS, Secrets Manager | Seguridad multicapa |
-| **Monitoring** | CloudWatch | Métricas y logs |
-| **Messaging** | SQS, SNS | Notificaciones asíncronas |
-| **Orchestration** | Lambda, EventBridge | Eventos y procesos |
+| **Computo** | ECS Fargate | Ejecucion de frontend y backend en tareas administradas |
+| **Base de datos** | Aurora MySQL | Persistencia principal del LMS y manejo de credenciales con Secrets Manager |
+| **Almacenamiento** | S3 | Buckets para recursos, entregas, certificados y backups con cifrado/versionado |
+| **Cache** | ElastiCache Redis | Soporte de cache para mejorar tiempos de respuesta |
+| **Red** | VPC, subnets publicas/privadas, ALB, NAT | Aislamiento de servicios y enrutamiento interno/externo |
+| **Seguridad** | Security Groups, IAM, KMS, Secrets Manager, WAF | Control de acceso, cifrado y proteccion perimetral |
+| **Monitoreo** | CloudWatch | Alarmas, metricas y tableros para seguimiento operativo |
+| **Mensajeria** | SQS, SNS | Comunicacion asincrona y desacople entre componentes |
+| **Orquestacion** | Lambda, API Gateway, EventBridge | Integraciones por eventos y endpoints del sistema |
+| **Operacion IaC** | Terraform + Ansible | Provisionamiento, ajustes y ejecucion repetible del entorno |
 
 ---
 
@@ -52,41 +53,41 @@ Este proyecto implementa una infraestructura para un Sistema de Gestion de Apren
 lms-infrastructure/
 │
 ├──  terraform/                    # Infraestructura como código
-│   ├── main.tf                      # Configuración principal
+│   ├── main.tf                      # Configuracion principal
 │   ├── variables.tf                 # Variables de entrada
-│   ├── outputs.tf                   # Valores de salida
+│   ├── outputs.tf                   # Salidas
 │   ├── locals.tf                    # Variables locales
 │   │
 │   ├── vpc.tf                       # Red VPC
-│   ├── ecs.tf                       # ECS Fargate Cluster
+│   ├── ecs.tf                       # Cluster ECS Fargate
 │   ├── aurora.tf                    # Base de datos Aurora
 │   ├── s3.tf                        # Buckets S3
-│   ├── alb.tf                       # Load Balancer
+│   ├── alb.tf                       # Balanceador de carga
 │   ├── waf.tf                       # Web Application Firewall
 │   ├── sqs.tf                       # Colas SQS
-│   ├── cloudwatch.tf                # Monitoreo
+│   ├── cloudwatch.tf                # Monitoreo y alertas
 │   ├── api_gateway.tf               # API Gateway
-│   ├── lambda.tf                    # Funciones Lambda
+│   ├── lambda.tf                    # Funciones de apoyo
 │   └── iam.tf                       # Roles y políticas
 │
-├──  ansible/                      # Configuración y deployment
+├──  ansible/                      # Configuracion y despliegue
 │   ├── playbook.yaml                # Playbook principal
 │   ├── inventory.ini                # Inventario de hosts
 │   ├── ansible.cfg                  # Configuración Ansible
-│   ├── requirements.yml             # Collections necesarias
+│   ├── requirements.yml             # Colecciones necesarias
 │   │
 │   ├── group_vars/               # Variables por entorno
 │   │   ├── all.yml
 │   │   ├── dev.yml
 │   │   └── prod.yml
 │   │
-│   ├── templates/                # Templates Jinja2
+│   ├── templates/                # Plantillas Jinja2
 │   │   ├── init_database.sql.j2
 │   │   ├── backend.env.j2
 │   │   ├── nginx.conf.j2
 │   │   └── logging.conf.j2
 │   │
-│   ├── scripts/                  # Scripts de automatización
+│   ├── scripts/                  # Scripts de automatizacion
 │   │   ├── deploy.sh
 │   │   └── check-health.sh
 │   │
@@ -197,13 +198,13 @@ Estado del proyecto:
 - Se verificaron los outputs de Terraform.
 - Se pudo ejecutar `terraform destroy` para limpiar recursos y cortar costos.
 
-## Tecnologías Utilizadas
+## Tecnologias utilizadas
 
 ### Infraestructura como codigo
 - **Terraform** 1.0+ - Aprovisionamiento de infraestructura
-- **Ansible** 2.9+ - Configuración y deployment
+- **Ansible** 2.9+ - Configuracion y despliegue
 
-### Proveedor cloud
+### Proveedor en la nube
 - **AWS** - Amazon Web Services
   - ECS Fargate
   - Aurora MySQL
@@ -211,9 +212,9 @@ Estado del proyecto:
   - ALB, WAF, VPC
   - SQS, SNS, Lambda
 
-### Containerización
-- **Docker** - Contenedores de aplicación
-- **Amazon ECR** - Registro de imágenes
+### Contenerizacion
+- **Docker** - Contenedores de aplicacion
+- **Amazon ECR** - Registro de imagenes
 
 
 
