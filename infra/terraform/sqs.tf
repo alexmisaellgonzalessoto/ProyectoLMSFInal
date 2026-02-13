@@ -1,5 +1,5 @@
 #DEAD LETTER QUEUE
-resource "aws_sqs_queue" "notification_dlq" {
+resource "aws_sqs_queue" "notifications_dlq" {
   name                      = "lms-notification-dlq-${var.environment}"
   message_retention_seconds = 1209600  # 14 days
 }
@@ -26,7 +26,7 @@ resource "aws_sqs_queue" "notifications" {
 }
 
 #COLA PARA LOS EMAILS
-resource "aws_sqs_queue" "email_queue" {
+resource "aws_sqs_queue" "emails" {
   name                       = "lms-email-queue-${var.environment}"
   delay_seconds              = 0
   max_message_size           = 262144  
@@ -35,7 +35,7 @@ resource "aws_sqs_queue" "email_queue" {
   visibility_timeout_seconds = 300    
 
   redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.notification_dlq.arn
+    deadLetterTargetArn = aws_sqs_queue.notifications_dlq.arn
     maxReceiveCount     = 5 
   })
 

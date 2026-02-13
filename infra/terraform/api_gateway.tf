@@ -18,17 +18,16 @@ resource "aws_api_gateway_resource" "resource" {
 }
 #Metodo post para publicar eventos chi cheñol
 resource "aws_api_gateway_method" "post_learning_event" {
-  rest_api_id   = aws_api_gateway_rest_api.lms_api.id
-  resource_id   = aws_api_gateway_resource.learning_events.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.resource.id
   http_method   = "POST"
   authorization = "NONE"
-  authorizer_id = aws_api_gateway_authorizer.lms_jwt_auth.id
 }
 
 #integracion con lambda jejeje
 resource "aws_api_gateway_integration" "lambda_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.lms_api.id
-  resource_id             = aws_api_gateway_resource.learning_events.id
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.resource.id
   http_method             = aws_api_gateway_method.post_learning_event.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
@@ -37,7 +36,7 @@ resource "aws_api_gateway_integration" "lambda_integration" {
 
 #Api deploymet omgg
 resource "aws_api_gateway_deployment" "lms_deployment" {
-  rest_api_id = aws_api_gateway_rest_api.lms_api.id
+  rest_api_id = aws_api_gateway_rest_api.api.id
   
   depends_on = [
     aws_api_gateway_integration.lambda_integration
@@ -49,7 +48,7 @@ resource "aws_api_gateway_deployment" "lms_deployment" {
 
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.learning_events.id,
+      aws_api_gateway_resource.resource.id,
       aws_api_gateway_method.post_learning_event.id,
       aws_api_gateway_integration.lambda_integration.id,
     ]))
@@ -59,7 +58,7 @@ resource "aws_api_gateway_deployment" "lms_deployment" {
 
 resource "aws_api_gateway_stage" "lms_stage" {
   deployment_id = aws_api_gateway_deployment.lms_deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.lms_api.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = var.environment
 
   tags = {

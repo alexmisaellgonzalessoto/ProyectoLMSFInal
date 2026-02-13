@@ -2,11 +2,29 @@
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.lambda.function_name
+  function_name = aws_lambda_function.learning_events_lambda.function_name
   principal     = "apigateway.amazonaws.com"
 
   # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
   # CAMBIAR ESTO POR TU VAR.MYREGION source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.resource.path}"
+}
+
+resource "aws_security_group" "lambda_sg" {
+  name        = "lms-lambda-sg-${var.environment}"
+  description = "Security group para Lambda dentro de la VPC"
+  vpc_id      = aws_vpc.lms_vpc.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "lms-lambda-sg"
+    Environment = var.environment
+  }
 }
 
 resource "aws_lambda_function" "learning_events_lambda" {
@@ -36,7 +54,7 @@ resource "aws_lambda_function" "learning_events_lambda" {
 }
 
 #funcion lambda para procesar archivos subidos del s3
-resource "aws_lambda_function" "procesar_subidas" {
+resource "aws_lambda_function" "process_submission" {
   filename      = "process_submission.zip"
   function_name = "lms-process-submission-${var.environment}"
   role          = aws_iam_role.lms_lambda_role.arn
@@ -66,7 +84,7 @@ resource "aws_lambda_permission" "allow_s3_invoke" {
 }
 
 #PROCESAR NOTIFICACIONES
-resource "aws_lambda_function" "procesador_notificaciones" {
+resource "aws_lambda_function" "notification_processor" {
   filename         = "notification_processor.zip"
   function_name    = "lms-notification-processor-${var.environment}"
   role             = aws_iam_role.lms_lambda_role.arn
@@ -100,7 +118,7 @@ resource "aws_lambda_event_source_mapping" "trigger_notificaciones" {
 }
 
 #PROCESAR EMAILS
-resource "aws_lambda_function" "procesador_emails" {
+resource "aws_lambda_function" "email_processor" {
   filename         = "email_processor.zip"
   function_name    = "lms-email-processor-${var.environment}"
   role             = aws_iam_role.lms_lambda_role.arn
@@ -133,7 +151,7 @@ resource "aws_lambda_event_source_mapping" "emails_trigger" {
   function_response_types = ["ReportBatchItemFailures"]
 }
 #SNS TOPIC PARA NOTIFICAIONES 
-resource "aws_sns_topic" "notificaciones" {
+resource "aws_sns_topic" "notifications" {
   name = "lms-notifications-topic-${var.environment}"
 
   tags = {
