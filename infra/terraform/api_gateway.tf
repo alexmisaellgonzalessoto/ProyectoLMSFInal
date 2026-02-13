@@ -95,6 +95,10 @@ resource "aws_api_gateway_stage" "lms_stage" {
     Name        = "lms-api-${var.environment}"
     Environment = var.environment
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 #Ess necesario poner esto para la autenticacion con cognito profe?
 #resource "aws_api_gateway_authorizer" "jwt_auth" {
