@@ -3,22 +3,22 @@ resource "aws_security_group" "alb_sg" {
   description = "Security group para ALB del LMS"
   vpc_id      = local.vpc_id
 
-  # HTTP desde API Gateway
+  # HTTP desde la VPC (API Gateway VPC Link / servicios internos)
   ingress {
     description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_vpc.lms_vpc.cidr_block]
   }
 
-  # HTTPS
+  # HTTPS desde la VPC (opcional)
   ingress {
     description = "HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_vpc.lms_vpc.cidr_block]
   }
 
   # Salida a ECS Fargate
@@ -37,12 +37,12 @@ resource "aws_security_group" "alb_sg" {
 # ALB
 resource "aws_lb" "lms_alb" {
   name               = "lms-alb"
-  internal           = false
+  internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = local.public_subnet_ids
+  subnets            = local.private_subnet_ids
 
-  enable_deletion_protection = false  #Cambiar a true en producción
+  enable_deletion_protection = false #Cambiar a true en producción
 
   tags = {
     Name        = "lms-alb"
@@ -56,7 +56,7 @@ resource "aws_lb_target_group" "frontend" {
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
-  target_type = "ip"  # Para Fargate
+  target_type = "ip" # Para Fargate
 
   health_check {
     enabled             = true
@@ -80,7 +80,7 @@ resource "aws_lb_target_group" "backend" {
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
-  target_type = "ip"  # Para Fargate
+  target_type = "ip" # Para Fargate
 
   health_check {
     enabled             = true
@@ -145,7 +145,7 @@ resource "aws_lb_listener" "https" {
 
 # Listener Rule - Rutas /api/* al Backend
 resource "aws_lb_listener_rule" "backend_api" {
-  listener_arn = var.enable_https_listener ? aws_lb_listener.https[0].arn : aws_lb_listener.http_forward[0].arn
+  listener_arn = local.alb_listener_arn
   priority     = 100
 
   action {
@@ -162,7 +162,7 @@ resource "aws_lb_listener_rule" "backend_api" {
 
 # Listener Rule - WebSocket para notificaciones en tiempo real
 resource "aws_lb_listener_rule" "websocket" {
-  listener_arn = var.enable_https_listener ? aws_lb_listener.https[0].arn : aws_lb_listener.http_forward[0].arn
+  listener_arn = local.alb_listener_arn
   priority     = 50
 
   action {
@@ -178,10 +178,12 @@ resource "aws_lb_listener_rule" "websocket" {
 }
 
 locals {
-  vpc_id = aws_vpc.lms_vpc.id   # En lugar de var.vpc_id
+  vpc_id = aws_vpc.lms_vpc.id # En lugar de var.vpc_id
 
   subnets = [
     aws_subnet.public_az1.id,
     aws_subnet.public_az2.id
   ]
+
+  alb_listener_arn = var.enable_https_listener ? aws_lb_listener.https[0].arn : aws_lb_listener.http_forward[0].arn
 }

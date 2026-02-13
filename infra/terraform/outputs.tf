@@ -64,8 +64,8 @@ output "backups_bucket_name" {
 }
 
 #output "s3_kms_key_arn" {
-  #description = "ARN de la KMS key para S3"
-  #value       = aws_kms_key.s3_kms.arn
+#description = "ARN de la KMS key para S3"
+#value       = aws_kms_key.s3_kms.arn
 #}
 
 #OUTPUTS ECS
@@ -123,4 +123,9 @@ output "alarm_names" {
     aws_cloudwatch_metric_alarm.aurora_cpu_high.alarm_name,
     aws_cloudwatch_metric_alarm.alb_5xx_errors.alarm_name
   ]
+}
+
+output "http_api_vpc_link_url" {
+  description = "URL de API Gateway HTTP API con VPC Link hacia ALB"
+  value       = var.enable_http_api_vpc_link ? aws_apigatewayv2_api.lms_http_api[0].api_endpoint : null
 }
