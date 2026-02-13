@@ -89,7 +89,7 @@ variable "aurora_database_name" {
 variable "aurora_instance_class" {
   description = "Tipo de instancia Aurora"
   type        = string
-  default     = "db.t3.medium"  
+  default     = "db.t3.medium"
 }
 
 #variable para desarrollo de s3 (Su dominio)
@@ -97,20 +97,20 @@ variable "aurora_instance_class" {
 variable "domain_name" {
   description = "Dominio del LMS"
   type        = string
-  default     = "localhost"  #Esto cambiar en produccion pa que funcione xd
+  default     = "localhost" #Esto cambiar en produccion pa que funcione xd
 }
 
 #VARIABLES PARA EL ECS
 variable "frontend_image" {
   description = "Imagen Docker del frontend"
   type        = string
-  default     = "nginx:latest"  # Cambiar por tu imagen real
+  default     = "nginx:latest" # Cambiar por tu imagen real
 }
 
 variable "backend_image" {
   description = "Imagen Docker del backend"
   type        = string
-  default     = "node:18-alpine"  # Cambiar por tu imagen real
+  default     = "node:18-alpine" # Cambiar por tu imagen real
 }
 
 variable "frontend_cpu" {
@@ -160,4 +160,10 @@ variable "enable_optional_lambdas" {
   description = "Crea lambdas opcionales que dependen de archivos zip locales"
   type        = bool
   default     = false
+}
+
+variable "enable_http_api_vpc_link" {
+  description = "Habilita API Gateway HTTP API con VPC Link hacia ALB interno"
+  type        = bool
+  default     = true
 }
