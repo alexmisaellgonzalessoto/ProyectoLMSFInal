@@ -4,41 +4,41 @@ resource "aws_security_group" "aurora_sg" {
   vpc_id      = local.vpc_id
 
   #MySQL desde Lambda
-    ingress {
-        description = "MySQL para Lambda"
-        from_port   = 3306
-        to_port     = 3306
-        protocol    = "tcp"
-        security_groups = [aws_security_group.lambda_sg.id]
-    }
+  ingress {
+    description     = "MySQL para Lambda"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lambda_sg.id]
+  }
 
   egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTPS only within VPC CIDR"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.lms_vpc.cidr_block]
   }
-    tags = {
-        Name = "lms-aurora-sg"
-        Environment = var.environment
-    }
+  tags = {
+    Name        = "lms-aurora-sg"
+    Environment = var.environment
+  }
 }
 
 #Subnet group para Aurora
 resource "aws_db_subnet_group" "aurora_subnet_group" {
-    name       = "lms-aurora-subnet-group- ${var.environment}"
-    subnet_ids = local.private_subnet_ids
-    tags = {
-        Name = "lms-aurora-subnet-group"
-        Environment = var.environment
-    }
+  name       = "lms-aurora-subnet-group- ${var.environment}"
+  subnet_ids = local.private_subnet_ids
+  tags = {
+    Name        = "lms-aurora-subnet-group"
+    Environment = var.environment
+  }
 }
 
 #generar contraseñas para aurora asi todas insanas
 resource "random_password" "aurora_password" {
-  length           = 32
-  special          = true
+  length  = 32
+  special = true
   # RDS no permite '/', '@', '"' ni espacios en MasterUserPassword.
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
@@ -84,22 +84,22 @@ resource "aws_secretsmanager_secret_version" "aurora_credentials_version" {
 
 # AURORA CLUSTER, CONFIGURACION PRINCIPAL
 resource "aws_rds_cluster" "aurora_cluster" {
-  cluster_identifier      = "lms-aurora-cluster-${var.environment}"
-  engine                  = "aurora-mysql"
-  engine_version          = "8.0.mysql_aurora.3.04.0"  # Aurora MySQL 3.x (compatible con MySQL 8.0)
-  database_name           = var.aurora_database_name
-  master_username         = var.aurora_master_username
-  master_password         = random_password.aurora_password.result
-  db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
-  vpc_security_group_ids  = [aws_security_group.aurora_sg.id]
-  
-# Backups automáticos
+  cluster_identifier     = "lms-aurora-cluster-${var.environment}"
+  engine                 = "aurora-mysql"
+  engine_version         = "8.0.mysql_aurora.3.04.0" # Aurora MySQL 3.x (compatible con MySQL 8.0)
+  database_name          = var.aurora_database_name
+  master_username        = var.aurora_master_username
+  master_password        = random_password.aurora_password.result
+  db_subnet_group_name   = aws_db_subnet_group.aurora_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.aurora_sg.id]
+
+  # Backups automáticos
   backup_retention_period = var.environment == "prod" ? 7 : 1
-  preferred_backup_window = "03:00-04:00" 
+  preferred_backup_window = "03:00-04:00"
 
   # Protección contra eliminación accidental (solo prod)
-  deletion_protection = var.environment == "prod" ? true : false
-  skip_final_snapshot = var.environment != "prod"
+  deletion_protection       = var.environment == "prod" ? true : false
+  skip_final_snapshot       = var.environment != "prod"
   final_snapshot_identifier = var.environment == "prod" ? "lms-aurora-final-${var.environment}-${formatdate("YYYYMMDDhhmmss", timestamp())}" : null
 
   # Habilitar logs
@@ -150,7 +150,7 @@ resource "aws_cloudwatch_metric_alarm" "aurora_cpu_high" {
   statistic           = "Average"
   threshold           = "80"
   alarm_description   = "CPU de Aurora superó 80%"
-  alarm_actions       = []  #No olvidar agregar sns topic para notificaciones ps amiguito
+  alarm_actions       = [] #No olvidar agregar sns topic para notificaciones ps amiguito
 
   dimensions = {
     DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
@@ -167,7 +167,7 @@ resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
   statistic           = "Average"
   threshold           = "500"
   alarm_description   = "Conexiones de Aurora superaron 500"
-  alarm_actions       = []  # lo mismo de arriba en la 142 xD
+  alarm_actions       = [] # lo mismo de arriba en la 142 xD
 
   dimensions = {
     DBClusterIdentifier = aws_rds_cluster.aurora_cluster.cluster_identifier
@@ -177,19 +177,19 @@ resource "aws_cloudwatch_metric_alarm" "aurora_connections_high" {
 #Instancias aurora
 #Escritura primero uwu
 resource "aws_rds_cluster_instance" "aurora_writer" {
-  identifier              = "lms-aurora-writer-${var.environment}"
-  cluster_identifier      = aws_rds_cluster.aurora_cluster.id
-  instance_class          = var.aurora_instance_class
-  engine                  = aws_rds_cluster.aurora_cluster.engine
-  engine_version          = aws_rds_cluster.aurora_cluster.engine_version
-  publicly_accessible     = false
-  db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
-  
+  identifier           = "lms-aurora-writer-${var.environment}"
+  cluster_identifier   = aws_rds_cluster.aurora_cluster.id
+  instance_class       = var.aurora_instance_class
+  engine               = aws_rds_cluster.aurora_cluster.engine
+  engine_version       = aws_rds_cluster.aurora_cluster.engine_version
+  publicly_accessible  = false
+  db_subnet_group_name = aws_db_subnet_group.aurora_subnet_group.name
+
   # Performance Insights solo en prod para evitar incompatibilidades/costo en dev.
-  performance_insights_enabled           = var.environment == "prod"
-  performance_insights_kms_key_id        = var.environment == "prod" ? aws_kms_key.aurora_kms.arn : null
-  performance_insights_retention_period  = var.environment == "prod" ? 7 : null
-  
+  performance_insights_enabled          = var.environment == "prod"
+  performance_insights_kms_key_id       = var.environment == "prod" ? aws_kms_key.aurora_kms.arn : null
+  performance_insights_retention_period = var.environment == "prod" ? 7 : null
+
   # Monitoreo avanzado
   monitoring_interval = 60
   monitoring_role_arn = aws_iam_role.rds_monitoring_role.arn
@@ -203,20 +203,20 @@ resource "aws_rds_cluster_instance" "aurora_writer" {
 
 # Instancia de lectura
 resource "aws_rds_cluster_instance" "aurora_reader" {
-  count                   = var.environment == "prod" ? 1 : 0 
-  identifier              = "lms-aurora-reader-${var.environment}-${count.index + 1}"
-  cluster_identifier      = aws_rds_cluster.aurora_cluster.id
-  instance_class          = var.aurora_instance_class
-  engine                  = aws_rds_cluster.aurora_cluster.engine
-  engine_version          = aws_rds_cluster.aurora_cluster.engine_version
-  publicly_accessible     = false
-  db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
-  
+  count                = var.environment == "prod" ? 1 : 0
+  identifier           = "lms-aurora-reader-${var.environment}-${count.index + 1}"
+  cluster_identifier   = aws_rds_cluster.aurora_cluster.id
+  instance_class       = var.aurora_instance_class
+  engine               = aws_rds_cluster.aurora_cluster.engine
+  engine_version       = aws_rds_cluster.aurora_cluster.engine_version
+  publicly_accessible  = false
+  db_subnet_group_name = aws_db_subnet_group.aurora_subnet_group.name
+
   # Performance Insights solo en prod para evitar incompatibilidades/costo en dev.
-  performance_insights_enabled           = var.environment == "prod"
-  performance_insights_kms_key_id        = var.environment == "prod" ? aws_kms_key.aurora_kms.arn : null
-  performance_insights_retention_period  = var.environment == "prod" ? 7 : null
-  
+  performance_insights_enabled          = var.environment == "prod"
+  performance_insights_kms_key_id       = var.environment == "prod" ? aws_kms_key.aurora_kms.arn : null
+  performance_insights_retention_period = var.environment == "prod" ? 7 : null
+
   # Monitoreo avanzado
   monitoring_interval = 60
   monitoring_role_arn = aws_iam_role.rds_monitoring_role.arn

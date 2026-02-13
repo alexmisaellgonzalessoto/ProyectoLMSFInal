@@ -5,10 +5,19 @@ resource "aws_security_group" "apigw_vpc_link_sg" {
   vpc_id      = aws_vpc.lms_vpc.id
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP only within VPC CIDR"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.lms_vpc.cidr_block]
+  }
+
+  egress {
+    description = "Allow HTTPS only within VPC CIDR"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.lms_vpc.cidr_block]
   }
 
   tags = {
@@ -53,10 +62,22 @@ resource "aws_apigatewayv2_integration" "alb_integration" {
 }
 
 resource "aws_apigatewayv2_route" "default_route" {
-  count     = var.enable_http_api_vpc_link ? 1 : 0
-  api_id    = aws_apigatewayv2_api.lms_http_api[0].id
-  route_key = "$default"
-  target    = "integrations/${aws_apigatewayv2_integration.alb_integration[0].id}"
+  count              = var.enable_http_api_vpc_link ? 1 : 0
+  api_id             = aws_apigatewayv2_api.lms_http_api[0].id
+  route_key          = "$default"
+  authorization_type = "AWS_IAM"
+  target             = "integrations/${aws_apigatewayv2_integration.alb_integration[0].id}"
+}
+
+resource "aws_cloudwatch_log_group" "http_api_access_logs" {
+  count             = var.enable_http_api_vpc_link ? 1 : 0
+  name              = "/aws/apigatewayv2/lms-http-${var.environment}"
+  retention_in_days = 365
+
+  tags = {
+    Name        = "lms-http-api-access-logs"
+    Environment = var.environment
+  }
 }
 
 resource "aws_apigatewayv2_stage" "default_stage" {
@@ -64,6 +85,19 @@ resource "aws_apigatewayv2_stage" "default_stage" {
   api_id      = aws_apigatewayv2_api.lms_http_api[0].id
   name        = "$default"
   auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.http_api_access_logs[0].arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      responseLength = "$context.responseLength"
+    })
+  }
 
   tags = {
     Name        = "lms-http-api-stage"
