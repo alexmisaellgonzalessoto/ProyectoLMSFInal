@@ -3,14 +3,6 @@ resource "aws_security_group" "aurora_sg" {
   description = "Security group for Aurora cluster"
   vpc_id      = local.vpc_id
 
-#Fargate
-  ingress {
-    description      = "MySQL para el ECS"
-    from_port        = 3306
-    to_port          = 3306
-    protocol         = "tcp"
-    security_groups = [aws_security_group.ecs_sg.id]
-  }
   #MySQL desde Lambda
     ingress {
         description = "MySQL para Lambda"
@@ -34,7 +26,7 @@ resource "aws_security_group" "aurora_sg" {
 }
 
 #Subnet group para Aurora
-resource "aws_bd_subnet_group" "aurora_subnet_group" {
+resource "aws_db_subnet_group" "aurora_subnet_group" {
     name       = "lms-aurora-subnet-group- ${var.environment}"
     subnet_ids = local.private_subnet_ids
     tags = {
@@ -48,6 +40,22 @@ resource "random_password" "aurora_password" {
   length           = 32
   special          = true
   override_special = "!@#$%&*()-_=+[]{}<>:?"
+}
+
+resource "aws_kms_key" "aurora_kms" {
+  description             = "KMS key para Aurora Performance Insights"
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+
+  tags = {
+    Name        = "lms-aurora-kms"
+    Environment = var.environment
+  }
+}
+
+resource "aws_kms_alias" "aurora_kms_alias" {
+  name          = "alias/lms-aurora-${var.environment}"
+  target_key_id = aws_kms_key.aurora_kms.key_id
 }
 
 #Guardar credenciales en Secrets Manager
@@ -65,7 +73,7 @@ resource "aws_secretsmanager_secret_version" "aurora_credentials_version" {
   secret_id = aws_secretsmanager_secret.aurora_credentials.id
   secret_string = jsonencode({
     username = var.aurora_master_username
-    password = random_password.aurora_master_password.result
+    password = random_password.aurora_password.result
     engine   = "mysql"
     host     = aws_rds_cluster.aurora_cluster.endpoint
     port     = 3306
@@ -80,7 +88,7 @@ resource "aws_rds_cluster" "aurora_cluster" {
   engine_version          = "8.0.mysql_aurora.3.04.0"  # Aurora MySQL 3.x (compatible con MySQL 8.0)
   database_name           = var.aurora_database_name
   master_username         = var.aurora_master_username
-  master_password         = random_password.aurora_master_password.result
+  master_password         = random_password.aurora_password.result
   db_subnet_group_name    = aws_db_subnet_group.aurora_subnet_group.name
   vpc_security_group_ids  = [aws_security_group.aurora_sg.id]
   
