@@ -4,7 +4,10 @@
   "description": "Backend for Learning Management System",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "lint": "node --check index.js",
+    "test": "node --check index.js",
+    "ci": "npm run lint && npm test"
   },
   "dependencies": {
     "express": "^4.17.1",
