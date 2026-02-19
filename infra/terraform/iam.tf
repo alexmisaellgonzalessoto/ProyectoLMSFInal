@@ -76,7 +76,7 @@ data "aws_iam_policy_document" "lms_s3_policy" {
     ]
 
     resources = [
-      "arn:aws:s3:::${var.lms_certificates_bucket}",
+      aws_s3_bucket.certificates.arn,
     ]
   }
 
@@ -92,7 +92,7 @@ data "aws_iam_policy_document" "lms_s3_policy" {
     ]
 
     resources = [
-      "arn:aws:s3:::${var.lms_certificates_bucket}/*",
+      "${aws_s3_bucket.certificates.arn}/*",
     ]
   }
 
@@ -107,7 +107,7 @@ data "aws_iam_policy_document" "lms_s3_policy" {
     ]
 
     resources = [
-      "arn:aws:s3:::${var.lms_resources_bucket}/*",
+      "${aws_s3_bucket.educational_resources.arn}/*",
     ]
   }
 
@@ -122,7 +122,7 @@ data "aws_iam_policy_document" "lms_s3_policy" {
     ]
 
     resources = [
-      "arn:aws:s3:::${var.lms_submissions_bucket}/students/*",
+      "${aws_s3_bucket.student_submissions.arn}/students/*",
     ]
   }
 }
@@ -155,7 +155,7 @@ data "aws_iam_policy_document" "lms_sns_policy" {
     ]
 
     resources = [
-      "arn:aws:sns:${var.myregion}:${var.accountId}:lms-notifications-topic"
+      aws_sns_topic.notifications.arn
     ]
   }
 }
@@ -180,8 +180,8 @@ data "aws_iam_policy_document" "lms_sqs_policy" {
     ]
 
     resources = [
-      "arn:aws:sqs:${var.myregion}:${var.accountId}:lms-notifications-queue",
-      "arn:aws:sqs:${var.myregion}:${var.accountId}:lms-notifications-dlq",
+      aws_sqs_queue.notifications.arn,
+      aws_sqs_queue.notifications_dlq.arn,
     ]
   }
 }
@@ -351,7 +351,7 @@ resource "aws_iam_role_policy" "ecs_task_lambda_invoke" {
           "lambda:InvokeFunction"
         ]
         Resource = [
-          aws_lambda_function.learning_events_lambda.arn
+          aws_lambda_function.ingestor_eventos_aprendizaje.arn
         ]
       }
     ]

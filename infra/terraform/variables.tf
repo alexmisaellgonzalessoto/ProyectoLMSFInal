@@ -110,25 +110,25 @@ variable "domain_name" {
 variable "frontend_image" {
   description = "Imagen Docker del frontend"
   type        = string
-  default     = "nginx:latest" # Cambiar por tu imagen real
+  default     = "lms-frontend:latest"
 }
 
 variable "backend_image" {
   description = "Imagen Docker del backend"
   type        = string
-  default     = "node:18-alpine" # Cambiar por tu imagen real
+  default     = "lms-backend:latest"
 }
 
 variable "auth_image" {
   description = "Imagen Docker del servicio de autenticacion"
   type        = string
-  default     = "node:18-alpine"
+  default     = "lms-auth:latest"
 }
 
 variable "worker_image" {
   description = "Imagen Docker del image-worker-service"
   type        = string
-  default     = "node:18-alpine"
+  default     = "lms-image-worker:latest"
 }
 
 variable "frontend_cpu" {
@@ -201,6 +201,42 @@ variable "worker_desired_count" {
   description = "Numero de tareas image-worker-service"
   type        = number
   default     = 1
+}
+
+variable "frontend_min_capacity" {
+  description = "Minimo de tareas para autoscaling del frontend"
+  type        = number
+  default     = 1
+}
+
+variable "frontend_max_capacity" {
+  description = "Maximo de tareas para autoscaling del frontend"
+  type        = number
+  default     = 4
+}
+
+variable "backend_min_capacity" {
+  description = "Minimo de tareas para autoscaling del backend"
+  type        = number
+  default     = 1
+}
+
+variable "backend_max_capacity" {
+  description = "Maximo de tareas para autoscaling del backend"
+  type        = number
+  default     = 4
+}
+
+variable "worker_min_capacity" {
+  description = "Minimo de tareas para autoscaling del image-worker-service"
+  type        = number
+  default     = 1
+}
+
+variable "worker_max_capacity" {
+  description = "Maximo de tareas para autoscaling del image-worker-service"
+  type        = number
+  default     = 6
 }
 
 #VARIABLE PARA SQS

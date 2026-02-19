@@ -107,6 +107,32 @@ output "image_worker_service_name" {
   value       = aws_ecs_service.image_worker_service.name
 }
 
+output "ecs_fargate_service_capacity" {
+  description = "Capacidad desired/min/max por servicio ECS Fargate"
+  value = {
+    frontend = {
+      desired = var.frontend_desired_count
+      min     = var.frontend_min_capacity
+      max     = var.frontend_max_capacity
+    }
+    backend = {
+      desired = var.backend_desired_count
+      min     = var.backend_min_capacity
+      max     = var.backend_max_capacity
+    }
+    auth = {
+      desired = var.auth_desired_count
+      min     = null
+      max     = null
+    }
+    image_worker = {
+      desired = var.worker_desired_count
+      min     = var.worker_min_capacity
+      max     = var.worker_max_capacity
+    }
+  }
+}
+
 #OUTPUTS SQS Y SNS
 
 output "notifications_queue_url" {

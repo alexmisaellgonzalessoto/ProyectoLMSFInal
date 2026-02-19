@@ -204,6 +204,10 @@ resource "aws_ecs_task_definition" "backend" {
           value = var.myregion
         },
         {
+          name  = "SNS_TOPIC_ARN"
+          value = aws_sns_topic.notifications.arn
+        },
+        {
           name  = "REDIS_HOST"
           value = aws_elasticache_replication_group.redis.primary_endpoint_address
         },
@@ -220,6 +224,14 @@ resource "aws_ecs_task_definition" "backend" {
         },
         {
           name      = "DB_USERNAME"
+          valueFrom = "${aws_secretsmanager_secret.aurora_credentials.arn}:username::"
+        },
+        {
+          name      = "DB_PASS"
+          valueFrom = "${aws_secretsmanager_secret.aurora_credentials.arn}:password::"
+        },
+        {
+          name      = "DB_USER"
           valueFrom = "${aws_secretsmanager_secret.aurora_credentials.arn}:username::"
         }
       ]
@@ -483,8 +495,8 @@ resource "aws_appautoscaling_policy" "frontend_cpu_scaling" {
   }
 }
 resource "aws_appautoscaling_target" "frontend_target" {
-  max_capacity       = 4
-  min_capacity       = 1
+  max_capacity       = var.frontend_max_capacity
+  min_capacity       = var.frontend_min_capacity
   resource_id        = "service/${aws_ecs_cluster.lms_cluster.name}/${aws_ecs_service.frontend_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
@@ -509,8 +521,8 @@ resource "aws_appautoscaling_policy" "backend_cpu_scaling" {
   }
 }
 resource "aws_appautoscaling_target" "backend_target" {
-  max_capacity       = 4
-  min_capacity       = 1
+  max_capacity       = var.backend_max_capacity
+  min_capacity       = var.backend_min_capacity
   resource_id        = "service/${aws_ecs_cluster.lms_cluster.name}/${aws_ecs_service.backend_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
@@ -518,8 +530,8 @@ resource "aws_appautoscaling_target" "backend_target" {
 
 #AUTOSCALING WORKER POR COLA SQS
 resource "aws_appautoscaling_target" "worker_target" {
-  max_capacity       = 6
-  min_capacity       = 1
+  max_capacity       = var.worker_max_capacity
+  min_capacity       = var.worker_min_capacity
   resource_id        = "service/${aws_ecs_cluster.lms_cluster.name}/${aws_ecs_service.image_worker_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"

@@ -1,10 +1,3 @@
-resource "aws_lambda_permission" "apigw_lambda" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.learning_events_lambda.function_name
-  principal     = "apigateway.amazonaws.com"
-
-}
 
 resource "aws_security_group" "lambda_sg" {
   name        = "lms-lambda-sg-${var.environment}"
@@ -24,9 +17,9 @@ resource "aws_security_group" "lambda_sg" {
   }
 }
 
-resource "aws_lambda_function" "learning_events_lambda" {
+resource "aws_lambda_function" "ingestor_eventos_aprendizaje" {
   filename      = "lambda.zip"
-  function_name = "lms-learning-events-publisher"
+  function_name = "lms-ingestor-eventos-aprendizaje-${var.environment}"
   role          = aws_iam_role.lms_lambda_role.arn
   handler       = "lambda.lambda_handler"
   runtime       = "python3.12"
@@ -34,7 +27,7 @@ resource "aws_lambda_function" "learning_events_lambda" {
   memory_size   = 256
 
   vpc_config {
-    subnet_ids         = local.private_subnet_ids 
+    subnet_ids         = local.private_subnet_ids
     security_group_ids = [aws_security_group.lambda_sg.id]
   }
 
@@ -47,12 +40,25 @@ resource "aws_lambda_function" "learning_events_lambda" {
       DB_NAME        = "lms_database"
     }
   }
+
+  tags = {
+    Name        = "lms-ingestor-eventos-aprendizaje"
+    Environment = var.environment
+  }
 }
 
-resource "aws_lambda_function" "process_submission" {
+resource "aws_lambda_permission" "allow_apigw_invoke_ingestor_eventos_aprendizaje" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ingestor_eventos_aprendizaje.function_name
+  principal     = "apigateway.amazonaws.com"
+}
+
+
+resource "aws_lambda_function" "procesador_archivos_entregas" {
   count         = var.enable_optional_lambdas ? 1 : 0
   filename      = "process_submission.zip"
-  function_name = "lms-process-submission-${var.environment}"
+  function_name = "lms-procesador-archivos-entregas-${var.environment}"
   role          = aws_iam_role.lms_lambda_role.arn
   handler       = "index.handler"
   runtime       = "python3.12"
@@ -65,24 +71,25 @@ resource "aws_lambda_function" "process_submission" {
   }
 
   tags = {
-    Name        = "lms-process-submission"
+    Name        = "lms-procesador-archivos-entregas"
     Environment = var.environment
   }
 }
 
-resource "aws_lambda_permission" "allow_s3_invoke" {
+resource "aws_lambda_permission" "allow_s3_invoke_procesador_archivos_entregas" {
   count         = var.enable_optional_lambdas ? 1 : 0
   statement_id  = "AllowExecutionFromS3Bucket"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.process_submission[0].function_name
+  function_name = aws_lambda_function.procesador_archivos_entregas[0].function_name
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.student_submissions.arn
 }
 
-resource "aws_lambda_function" "notification_processor" {
+
+resource "aws_lambda_function" "despachador_notificaciones" {
   count                          = var.enable_optional_lambdas ? 1 : 0
   filename                       = "notification_processor.zip"
-  function_name                  = "lms-notification-processor-${var.environment}"
+  function_name                  = "lms-despachador-notificaciones-${var.environment}"
   role                           = aws_iam_role.lms_lambda_role.arn
   handler                        = "index.handler"
   runtime                        = "python3.12"
@@ -98,25 +105,26 @@ resource "aws_lambda_function" "notification_processor" {
   }
 
   tags = {
-    Name        = "lms-notification-processor"
+    Name        = "lms-despachador-notificaciones"
     Environment = var.environment
   }
 }
 
-resource "aws_lambda_event_source_mapping" "trigger_notificaciones" {
+resource "aws_lambda_event_source_mapping" "mapeo_cola_notificaciones" {
   count                              = var.enable_optional_lambdas ? 1 : 0
   event_source_arn                   = aws_sqs_queue.notifications.arn
-  function_name                      = aws_lambda_function.notification_processor[0].arn
+  function_name                      = aws_lambda_function.despachador_notificaciones[0].arn
   batch_size                         = 10
   maximum_batching_window_in_seconds = 5
 
   function_response_types = ["ReportBatchItemFailures"]
 }
 
-resource "aws_lambda_function" "email_processor" {
+
+resource "aws_lambda_function" "despachador_correos" {
   count                          = var.enable_optional_lambdas ? 1 : 0
   filename                       = "email_processor.zip"
-  function_name                  = "lms-email-processor-${var.environment}"
+  function_name                  = "lms-despachador-correos-${var.environment}"
   role                           = aws_iam_role.lms_lambda_role.arn
   handler                        = "index.handler"
   runtime                        = "python3.12"
@@ -132,20 +140,21 @@ resource "aws_lambda_function" "email_processor" {
   }
 
   tags = {
-    Name        = "lms-email-processor"
+    Name        = "lms-despachador-correos"
     Environment = var.environment
   }
 }
 
-resource "aws_lambda_event_source_mapping" "emails_trigger" {
+resource "aws_lambda_event_source_mapping" "mapeo_cola_correos" {
   count                              = var.enable_optional_lambdas ? 1 : 0
   event_source_arn                   = aws_sqs_queue.emails.arn
-  function_name                      = aws_lambda_function.email_processor[0].arn
+  function_name                      = aws_lambda_function.despachador_correos[0].arn
   batch_size                         = 5
   maximum_batching_window_in_seconds = 3
 
   function_response_types = ["ReportBatchItemFailures"]
 }
+
 
 resource "aws_sns_topic" "notifications" {
   name = "lms-notifications-topic-${var.environment}"
@@ -153,6 +162,6 @@ resource "aws_sns_topic" "notifications" {
   tags = {
     Name        = "lms-notifications-topic"
     Environment = var.environment
-    Purpose     = "SNS Topic for notifications"
+    Purpose     = "SNS topic for notifications"
   }
 }

@@ -35,7 +35,7 @@ resource "aws_api_gateway_integration" "lambda_integration" {
   http_method             = aws_api_gateway_method.post_learning_event.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.learning_events_lambda.invoke_arn
+  uri                     = aws_lambda_function.ingestor_eventos_aprendizaje.invoke_arn
 }
 
 resource "aws_api_gateway_deployment" "lms_deployment" {
