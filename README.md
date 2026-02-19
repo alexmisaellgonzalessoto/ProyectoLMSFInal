@@ -91,6 +91,28 @@ ansible-playbook playbook.yaml -e "env=dev"
 infra/ansible/scripts/deploy.sh dev deploy
 ```
 
+## Pipeline CI/CD (Jenkins)
+
+El `jenkinsfile` ahora ejecuta este flujo:
+
+1. `Preflight`: valida herramientas requeridas.
+2. `CI Backend`: instala dependencias y ejecuta `lint/test`.
+3. `CI Frontend`: valida estructura minima de frontend.
+4. `Terraform Validate`: `fmt`, `init` y `validate`.
+5. `Terraform Plan`: genera `tfplan` y `tfplan.txt`.
+6. `Aprobacion Manual` (opcional).
+7. `Terraform Apply`.
+8. `Build y Push Docker` (opcional, via Ansible).
+9. `Deploy ECS + Healthcheck` (opcional, via Ansible).
+
+Parametros principales:
+
+- `targetEnvironment`: `dev`, `staging` o `prod`.
+- `awsAccountId`: cuenta AWS para ECR.
+- `autoApprove`: omite aprobacion manual.
+- `buildImages`: habilita build/push de imagenes.
+- `deployServices`: habilita deploy ECS y health check.
+
 ## Observaciones de organizacion aplicadas
 
 - Se corrigieron rutas rotas entre carpetas (`front`, `back`, `infra/terraform`).
