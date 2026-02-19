@@ -14,4 +14,4 @@ backend_min_capacity    = 0
 backend_max_capacity    = 1
 worker_min_capacity     = 0
 worker_max_capacity     = 1
-enable_grafana          = false
+enable_grafana          = true
