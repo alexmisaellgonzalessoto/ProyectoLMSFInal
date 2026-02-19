@@ -20,7 +20,7 @@ resource "aws_api_gateway_resource" "resource" {
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
   rest_api_id = aws_api_gateway_rest_api.api.id
 }
-#Metodo post para publicar eventos chi cheñol
+
 resource "aws_api_gateway_method" "post_learning_event" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.resource.id
@@ -29,7 +29,6 @@ resource "aws_api_gateway_method" "post_learning_event" {
   api_key_required = true
 }
 
-#integracion con lambda jejeje
 resource "aws_api_gateway_integration" "lambda_integration" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.resource.id
@@ -39,7 +38,6 @@ resource "aws_api_gateway_integration" "lambda_integration" {
   uri                     = aws_lambda_function.learning_events_lambda.invoke_arn
 }
 
-#Api deploymet omgg
 resource "aws_api_gateway_deployment" "lms_deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 
@@ -117,9 +115,3 @@ resource "aws_api_gateway_method_settings" "lms_all_methods" {
     cache_ttl_in_seconds = 300
   }
 }
-#Ess necesario poner esto para la autenticacion con cognito profe?
-#resource "aws_api_gateway_authorizer" "jwt_auth" {
-# name            = "lms-jwt-authorizer"
-#rest_api_id     = aws_api_gateway_rest_api.lms_api.id
-#type            = "COGNITO_USER_POOLS"
-#provider_arns   = [aws_cognito_user_pool.lms_users.arn]

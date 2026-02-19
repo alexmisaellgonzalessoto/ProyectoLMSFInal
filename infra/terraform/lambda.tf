@@ -1,12 +1,9 @@
-# Lambda
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.learning_events_lambda.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
-  # CAMBIAR ESTO POR TU VAR.MYREGION source_arn = "arn:aws:execute-api:${var.myregion}:${var.accountId}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.resource.path}"
 }
 
 resource "aws_security_group" "lambda_sg" {
@@ -36,9 +33,8 @@ resource "aws_lambda_function" "learning_events_lambda" {
   timeout       = 30
   memory_size   = 256
 
-  # VPC Configuration para conectarse a Aurora
   vpc_config {
-    subnet_ids         = local.private_subnet_ids # Mismas subnets que Aurora
+    subnet_ids         = local.private_subnet_ids 
     security_group_ids = [aws_security_group.lambda_sg.id]
   }
 
@@ -53,7 +49,6 @@ resource "aws_lambda_function" "learning_events_lambda" {
   }
 }
 
-#funcion lambda para procesar archivos subidos del s3
 resource "aws_lambda_function" "process_submission" {
   count         = var.enable_optional_lambdas ? 1 : 0
   filename      = "process_submission.zip"
@@ -75,7 +70,6 @@ resource "aws_lambda_function" "process_submission" {
   }
 }
 
-# Permiso para que S3 invoque Lambda
 resource "aws_lambda_permission" "allow_s3_invoke" {
   count         = var.enable_optional_lambdas ? 1 : 0
   statement_id  = "AllowExecutionFromS3Bucket"
@@ -85,7 +79,6 @@ resource "aws_lambda_permission" "allow_s3_invoke" {
   source_arn    = aws_s3_bucket.student_submissions.arn
 }
 
-#PROCESAR NOTIFICACIONES
 resource "aws_lambda_function" "notification_processor" {
   count                          = var.enable_optional_lambdas ? 1 : 0
   filename                       = "notification_processor.zip"
@@ -110,7 +103,6 @@ resource "aws_lambda_function" "notification_processor" {
   }
 }
 
-#SQS + Lambda
 resource "aws_lambda_event_source_mapping" "trigger_notificaciones" {
   count                              = var.enable_optional_lambdas ? 1 : 0
   event_source_arn                   = aws_sqs_queue.notifications.arn
@@ -121,7 +113,6 @@ resource "aws_lambda_event_source_mapping" "trigger_notificaciones" {
   function_response_types = ["ReportBatchItemFailures"]
 }
 
-#PROCESAR EMAILS
 resource "aws_lambda_function" "email_processor" {
   count                          = var.enable_optional_lambdas ? 1 : 0
   filename                       = "email_processor.zip"
@@ -146,7 +137,6 @@ resource "aws_lambda_function" "email_processor" {
   }
 }
 
-#TRIGGER PARA EMAILS
 resource "aws_lambda_event_source_mapping" "emails_trigger" {
   count                              = var.enable_optional_lambdas ? 1 : 0
   event_source_arn                   = aws_sqs_queue.emails.arn
@@ -156,7 +146,7 @@ resource "aws_lambda_event_source_mapping" "emails_trigger" {
 
   function_response_types = ["ReportBatchItemFailures"]
 }
-#SNS TOPIC PARA NOTIFICAIONES 
+
 resource "aws_sns_topic" "notifications" {
   name = "lms-notifications-topic-${var.environment}"
 

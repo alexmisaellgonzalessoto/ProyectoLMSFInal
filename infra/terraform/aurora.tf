@@ -3,7 +3,6 @@ resource "aws_security_group" "aurora_sg" {
   description = "Security group for Aurora cluster"
   vpc_id      = local.vpc_id
 
-  #MySQL desde Lambda
   ingress {
     description     = "MySQL para Lambda"
     from_port       = 3306

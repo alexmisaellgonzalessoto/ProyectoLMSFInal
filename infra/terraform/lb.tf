@@ -3,7 +3,6 @@ resource "aws_security_group" "alb_sg" {
   description = "Security group para ALB del LMS"
   vpc_id      = local.vpc_id
 
-  # HTTP desde la VPC (API Gateway VPC Link / servicios internos)
   ingress {
     description = "HTTP"
     from_port   = 80
@@ -12,7 +11,6 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = [aws_vpc.lms_vpc.cidr_block]
   }
 
-  # HTTPS desde la VPC (opcional)
   ingress {
     description = "HTTPS"
     from_port   = 443
@@ -21,7 +19,6 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = [aws_vpc.lms_vpc.cidr_block]
   }
 
-  # Salida a ECS Fargate
   egress {
     from_port   = 0
     to_port     = 0
@@ -34,7 +31,6 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# ALB
 resource "aws_lb" "lms_alb" {
   name               = "lms-alb"
   internal           = true
@@ -42,7 +38,7 @@ resource "aws_lb" "lms_alb" {
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = local.private_subnet_ids
 
-  enable_deletion_protection = false #Cambiar a true en producción
+  enable_deletion_protection = false 
 
   tags = {
     Name        = "lms-alb"
@@ -50,14 +46,12 @@ resource "aws_lb" "lms_alb" {
   }
 }
 
-# Frontend
 resource "aws_lb_target_group" "frontend" {
   name        = "lms-frontend-tg"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
-  target_type = "ip" # Para Fargate
-
+  target_type = "ip" 
   health_check {
     enabled             = true
     healthy_threshold   = 2
@@ -74,13 +68,12 @@ resource "aws_lb_target_group" "frontend" {
   }
 }
 
-#Backend API
 resource "aws_lb_target_group" "backend" {
   name        = "lms-backend-tg"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
-  target_type = "ip" # Para Fargate
+  target_type = "ip" 
 
   health_check {
     enabled             = true
@@ -98,13 +91,12 @@ resource "aws_lb_target_group" "backend" {
   }
 }
 
-# Auth API
 resource "aws_lb_target_group" "auth" {
   name        = "lms-auth-tg"
   port        = 3001
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
-  target_type = "ip" # Para Fargate
+  target_type = "ip" 
 
   health_check {
     enabled             = true
@@ -122,7 +114,6 @@ resource "aws_lb_target_group" "auth" {
   }
 }
 
-# Listener HTTP cuando HTTPS no está habilitado
 resource "aws_lb_listener" "http_forward" {
   count             = var.enable_https_listener ? 0 : 1
   load_balancer_arn = aws_lb.lms_alb.arn
@@ -135,7 +126,6 @@ resource "aws_lb_listener" "http_forward" {
   }
 }
 
-# Listener HTTP redirigiendo a HTTPS cuando está habilitado
 resource "aws_lb_listener" "http_redirect" {
   count             = var.enable_https_listener ? 1 : 0
   load_balancer_arn = aws_lb.lms_alb.arn
@@ -152,7 +142,6 @@ resource "aws_lb_listener" "http_redirect" {
   }
 }
 
-# Listener HTTPS opcional
 resource "aws_lb_listener" "https" {
   count             = var.enable_https_listener ? 1 : 0
   load_balancer_arn = aws_lb.lms_alb.arn
@@ -167,7 +156,6 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# Listener Rule - Rutas /api/* al Backend
 resource "aws_lb_listener_rule" "backend_api" {
   listener_arn = local.alb_listener_arn
   priority     = 100
@@ -184,7 +172,6 @@ resource "aws_lb_listener_rule" "backend_api" {
   }
 }
 
-# Listener Rule - Rutas /auth/* al servicio de autenticacion
 resource "aws_lb_listener_rule" "auth_api" {
   listener_arn = local.alb_listener_arn
   priority     = 90
@@ -201,7 +188,6 @@ resource "aws_lb_listener_rule" "auth_api" {
   }
 }
 
-# Listener Rule - WebSocket para notificaciones en tiempo real
 resource "aws_lb_listener_rule" "websocket" {
   listener_arn = local.alb_listener_arn
   priority     = 50
@@ -219,7 +205,7 @@ resource "aws_lb_listener_rule" "websocket" {
 }
 
 locals {
-  vpc_id = aws_vpc.lms_vpc.id # En lugar de var.vpc_id
+  vpc_id = aws_vpc.lms_vpc.id 
 
   subnets = [
     aws_subnet.public_az1.id,

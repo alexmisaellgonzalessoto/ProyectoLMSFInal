@@ -157,6 +157,7 @@ resource "aws_ecs_task_definition" "backend" {
       name      = "backend"
       image     = var.backend_image
       essential = true
+      command   = ["sh", "-c", "node -e 'require(\"http\").createServer((req,res)=>{if(req.url===\"/health\"){res.statusCode=200;res.end(\"ok\");return;}res.statusCode=200;res.setHeader(\"Content-Type\",\"application/json\");res.end(JSON.stringify({service:\"backend\",status:\"running\"}));}).listen(8000,\"0.0.0.0\")'"]
 
       portMappings = [
         {
