@@ -190,3 +190,13 @@ output "eventbridge_bus_name" {
   description = "Nombre del EventBridge Bus del LMS"
   value       = aws_cloudwatch_event_bus.lms_events_bus.name
 }
+
+output "grafana_workspace_id" {
+  description = "ID del workspace de Amazon Managed Grafana"
+  value       = var.enable_grafana ? aws_grafana_workspace.lms[0].id : null
+}
+
+output "grafana_workspace_url" {
+  description = "URL del workspace de Amazon Managed Grafana"
+  value       = var.enable_grafana ? "https://${aws_grafana_workspace.lms[0].endpoint}" : null
+}

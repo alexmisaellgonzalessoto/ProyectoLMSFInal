@@ -18,6 +18,7 @@ Stack principal de infraestructura LMS.
 - `clw.tf`: logs, alarmas y dashboard
 - `waf.tf`: WAF para ALB
 - `eventbridge.tf`: bus de eventos
+- `grafana.tf`: workspace de Amazon Managed Grafana
 - `outputs.tf`: salidas clave
 
 ## Convenciones
@@ -31,3 +32,10 @@ Stack principal de infraestructura LMS.
   - `*_desired_count`
   - `*_min_capacity`
   - `*_max_capacity`
+
+## Grafana
+
+- Activacion: `enable_grafana = true`
+- Outputs:
+  - `grafana_workspace_id`
+  - `grafana_workspace_url`

@@ -263,3 +263,21 @@ variable "enable_waf" {
   type        = bool
   default     = true
 }
+
+variable "enable_grafana" {
+  description = "Habilita Amazon Managed Grafana para observabilidad"
+  type        = bool
+  default     = false
+}
+
+variable "grafana_authentication_providers" {
+  description = "Proveedores de autenticacion para Grafana"
+  type        = list(string)
+  default     = ["AWS_SSO"]
+}
+
+variable "grafana_data_sources" {
+  description = "Data sources habilitados en el workspace de Grafana"
+  type        = list(string)
+  default     = ["CLOUDWATCH", "XRAY"]
+}
