@@ -1,60 +1,46 @@
-#No se si pushear mis scripts porque me sale un warning 
-#!/bin/bash
-set -e
-ENVIRONMENT=${1:-dev}
-echo "Salud de la infraestructura en el ambiente: $ENVIRONMENT"
+#!/usr/bin/env bash
+set -euo pipefail
 
-#Obtener alb dns
-ALB_DNS=$(cd terraform && terraform output -raw alb_dns_name)
+ENVIRONMENT="${1:-dev}"
 
-echo -n "Salud del ALB:"
-if curl -sf http://$ALB_DNS/healthz > /dev/null; then
-    echo "TODO BIEN jajsjs"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TERRAFORM_DIR="$(cd "${SCRIPT_DIR}/../../terraform" && pwd)"
+
+echo "Health check LMS (${ENVIRONMENT})"
+
+ALB_DNS="$(cd "${TERRAFORM_DIR}" && terraform output -raw alb_dns_name)"
+CLUSTER_NAME="$(cd "${TERRAFORM_DIR}" && terraform output -raw ecs_cluster_name)"
+DB_HOST="$(cd "${TERRAFORM_DIR}" && terraform output -raw aurora_cluster_endpoint)"
+DB_SECRET_ARN="$(cd "${TERRAFORM_DIR}" && terraform output -raw aurora_secret_arn)"
+
+echo -n "ALB /health: "
+if curl -sf "http://${ALB_DNS}/health" >/dev/null; then
+  echo "OK"
 else
-    echo "HAY PROBLEMAS :v"
+  echo "FAIL"
 fi
-#backend api
-echo -n "Backend API: "
-if curl -sf "http://$ALB_DNS/api/health" > /dev/null; then
-    echo "TODO BIEN jajsjs"
-else
-    echo "HAY PROBLEMAS :v"
-fi
-#ecs service
-CLUSTER=$(cd terraform && terraform output -raw ecs_cluster_name)
 
-for SERVICE in "lms-frontend-service-$ENVIRONMENT" "lms-backend-service-$ENVIRONMENT"; do
-    echo -n "$SERVICE: "
-    RUNNING=$(aws ecs describe-services \
-        --cluster $CLUSTER \
-        --services $SERVICE \
-        --query 'services[0].runningCount' \
-        --output text)
-    DESIRED=$(aws ecs describe-services \
-        --cluster $CLUSTER \
-        --services $SERVICE \
-        --query 'services[0].desiredCount' \
-        --output text)
-    
-    if [ "$RUNNING" == "$DESIRED" ]; then
-        echo "$RUNNING/$DESIRED tasks running"
-    else
-        echo "$RUNNING/$DESIRED tasks running"
-    fi
+echo -n "Backend /api/health: "
+if curl -sf "http://${ALB_DNS}/api/health" >/dev/null; then
+  echo "OK"
+else
+  echo "FAIL"
+fi
+
+for SERVICE in "lms-frontend-service-${ENVIRONMENT}" "lms-backend-service-${ENVIRONMENT}"; do
+  RUNNING="$(aws ecs describe-services --cluster "${CLUSTER_NAME}" --services "${SERVICE}" --query 'services[0].runningCount' --output text)"
+  DESIRED="$(aws ecs describe-services --cluster "${CLUSTER_NAME}" --services "${SERVICE}" --query 'services[0].desiredCount' --output text)"
+  echo "${SERVICE}: ${RUNNING}/${DESIRED} running"
 done
-#SALUD AURORA
-echo -n "Aurora Database: "
-DB_CLUSTER=$(cd terraform && terraform output -raw aurora_cluster_endpoint)
-DB_SECRET=$(aws secretsmanager get-secret-value \
-    --secret-id lms/aurora/credentials-$ENVIRONMENT \
-    --query SecretString \
-    --output text | jq -r .password)
 
-if mysql -h "$DB_CLUSTER" -u lmsadmin -p"$DB_SECRET" -e "SELECT 1" &> /dev/null; then
-    echo "TODO BIEN jasjajs"
+DB_USER="$(aws secretsmanager get-secret-value --secret-id "${DB_SECRET_ARN}" --query 'SecretString' --output text | jq -r .username)"
+DB_PASS="$(aws secretsmanager get-secret-value --secret-id "${DB_SECRET_ARN}" --query 'SecretString' --output text | jq -r .password)"
+
+echo -n "Aurora DB: "
+if mysql -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASS}" -e "SELECT 1" >/dev/null 2>&1; then
+  echo "OK"
 else
-    echo "TODO MAL XD"
+  echo "FAIL"
 fi
 
-echo ""
-echo "URL: http://$ALB_DNS"
+echo "URL base: http://${ALB_DNS}"

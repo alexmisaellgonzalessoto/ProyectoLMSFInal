@@ -60,11 +60,11 @@
         - name: Extraer valores importantes
           set_fact:
             ecr_registry: "{{ lookup('env', 'AWS_ACCOUNT_ID') }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
-            vpc_id: "{{ tf_outputs.vpc_id.value }}"
             alb_dns: "{{ tf_outputs.alb_dns_name.value }}"
             aurora_endpoint: "{{ tf_outputs.aurora_cluster_endpoint.value }}"
             s3_certificates_bucket: "{{ tf_outputs.certificates_bucket_name.value }}"
             s3_resources_bucket: "{{ tf_outputs.educational_resources_bucket_name.value }}"
+            s3_submissions_bucket: "{{ tf_outputs.student_submissions_bucket_name.value }}"
             ecs_cluster_name: "{{ tf_outputs.ecs_cluster_name.value }}"
       tags: [terraform]
 
@@ -102,7 +102,7 @@
           
         - name: Crear script de inicialización de BD
           template:
-            src: templates/init_database.sql.j2
+            src: templates/init.database.sql.j2
             dest: "{{ scripts_dir }}/init_database.sql"
             mode: '0600'
           vars:
@@ -157,8 +157,8 @@
           docker_image:
             name: "{{ frontend_image }}"
             build:
-              path: "{{ playbook_dir }}/../frontend"
-              dockerfile: Dockerfile
+              path: "{{ playbook_dir }}/../front"
+              dockerfile: dockerfile
             source: build
             push: yes
           when: build_frontend | default(true) | bool
@@ -167,8 +167,8 @@
           docker_image:
             name: "{{ backend_image }}"
             build:
-              path: "{{ playbook_dir }}/../backend"
-              dockerfile: Dockerfile
+              path: "{{ playbook_dir }}/../back"
+              dockerfile: dockerfile
             source: build
             push: yes
           when: build_backend | default(true) | bool
@@ -187,10 +187,11 @@
             db_name: "{{ db_credentials.dbname }}"
             s3_certificates: "{{ s3_certificates_bucket }}"
             s3_resources: "{{ s3_resources_bucket }}"
+            s3_submissions_bucket: "{{ s3_submissions_bucket }}"
             
         - name: Crear configuración de logging
           template:
-            src: templates/logging.conf.j2
+            src: templates/loggin.conf.j2
             dest: "{{ config_dir }}/backend/logging.conf"
             mode: '0644'
       tags: [config]
@@ -199,7 +200,7 @@
       block:
         - name: Crear configuración Nginx
           template:
-            src: templates/nginx.conf.j2
+            src: templates/front.conf.j2
             dest: "{{ config_dir }}/nginx/default.conf"
             mode: '0644'
           vars:
@@ -235,7 +236,7 @@
           command: >
             aws ecs wait services-stable
             --cluster {{ ecs_cluster_name }}
-            --services lms-frontend-service-{{ env }} lms-backend-service-{{ environment }}
+            --services lms-frontend-service-{{ env }} lms-backend-service-{{ env }}
             --region {{ aws_region }}
           when: deploy_frontend | default(false) | bool or deploy_backend | default(false) | bool
       tags: [deploy]
