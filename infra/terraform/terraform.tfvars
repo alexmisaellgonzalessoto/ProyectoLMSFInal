@@ -1,7 +1,7 @@
-accountId       = "218085830508"
-environment     = "dev"
-domain_name     = "tudominio.com"
-myregion        = "us-east-1"
+accountId               = "218085830508"
+environment             = "dev"
+domain_name             = "tudominio.com"
+myregion                = "us-east-1"
 enable_https_listener   = false
 enable_optional_lambdas = false
 frontend_desired_count  = 0

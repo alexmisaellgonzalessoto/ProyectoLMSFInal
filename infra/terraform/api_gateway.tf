@@ -22,10 +22,10 @@ resource "aws_api_gateway_resource" "resource" {
 }
 
 resource "aws_api_gateway_method" "post_learning_event" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.resource.id
-  http_method   = "POST"
-  authorization = "AWS_IAM"
+  rest_api_id      = aws_api_gateway_rest_api.api.id
+  resource_id      = aws_api_gateway_resource.resource.id
+  http_method      = "POST"
+  authorization    = "AWS_IAM"
   api_key_required = true
 }
 
@@ -80,14 +80,14 @@ resource "aws_api_gateway_stage" "lms_stage" {
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_access_logs.arn
     format = jsonencode({
-      requestId      = "$context.requestId"
-      ip             = "$context.identity.sourceIp"
-      userAgent      = "$context.identity.userAgent"
-      requestTime    = "$context.requestTime"
-      httpMethod     = "$context.httpMethod"
-      routeKey       = "$context.routeKey"
-      status         = "$context.status"
-      responseLength = "$context.responseLength"
+      requestId        = "$context.requestId"
+      ip               = "$context.identity.sourceIp"
+      userAgent        = "$context.identity.userAgent"
+      requestTime      = "$context.requestTime"
+      httpMethod       = "$context.httpMethod"
+      routeKey         = "$context.routeKey"
+      status           = "$context.status"
+      responseLength   = "$context.responseLength"
       integrationError = "$context.integrationErrorMessage"
     })
   }
@@ -95,10 +95,6 @@ resource "aws_api_gateway_stage" "lms_stage" {
   tags = {
     Name        = "lms-api-${var.environment}"
     Environment = var.environment
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 
   depends_on = [aws_cloudwatch_log_group.api_gateway_access_logs]
