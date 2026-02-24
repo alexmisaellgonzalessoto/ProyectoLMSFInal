@@ -39,6 +39,7 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        AWS_SESSION_TOKEN     = credentials('AWS_SESSION_TOKEN')
         AWS_DEFAULT_REGION    = 'us-east-1'
         AWS_REGION            = 'us-east-1'
         TF_IN_AUTOMATION      = 'true'
