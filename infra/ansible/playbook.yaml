@@ -157,7 +157,7 @@
           docker_image:
             name: "{{ frontend_image }}"
             build:
-              path: "{{ playbook_dir }}/../front"
+              path: "{{ playbook_dir }}/../../front"
               dockerfile: dockerfile
             source: build
             push: yes
@@ -167,7 +167,7 @@
           docker_image:
             name: "{{ backend_image }}"
             build:
-              path: "{{ playbook_dir }}/../back"
+              path: "{{ playbook_dir }}/../../back"
               dockerfile: dockerfile
             source: build
             push: yes
