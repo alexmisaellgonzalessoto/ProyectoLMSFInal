@@ -12,6 +12,16 @@ resource "aws_ecs_cluster" "lms_cluster" {
   }
 }
 
+locals {
+  ecr_registry = "${var.accountId}.dkr.ecr.${var.myregion}.amazonaws.com"
+
+  # Accept full image URIs; otherwise resolve short names to ECR in this account/region.
+  frontend_image_resolved = can(regex("^[^/]+\\.[^/]+/", var.frontend_image)) ? var.frontend_image : "${local.ecr_registry}/${var.frontend_image}"
+  backend_image_resolved  = can(regex("^[^/]+\\.[^/]+/", var.backend_image)) ? var.backend_image : "${local.ecr_registry}/${var.backend_image}"
+  auth_image_resolved     = can(regex("^[^/]+\\.[^/]+/", var.auth_image)) ? var.auth_image : "${local.ecr_registry}/${var.auth_image}"
+  worker_image_resolved   = can(regex("^[^/]+\\.[^/]+/", var.worker_image)) ? var.worker_image : "${local.ecr_registry}/${var.worker_image}"
+}
+
 resource "aws_ecs_cluster_capacity_providers" "lms_capacity" {
   cluster_name = aws_ecs_cluster.lms_cluster.name
 
@@ -92,7 +102,7 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name      = "frontend"
-      image     = var.frontend_image
+      image     = local.frontend_image_resolved
       essential = true
 
       portMappings = [
@@ -155,7 +165,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = var.backend_image
+      image     = local.backend_image_resolved
       essential = true
       command   = ["sh", "-c", "node -e 'require(\"http\").createServer((req,res)=>{if(req.url===\"/health\"){res.statusCode=200;res.end(\"ok\");return;}res.statusCode=200;res.setHeader(\"Content-Type\",\"application/json\");res.end(JSON.stringify({service:\"backend\",status:\"running\"}));}).listen(8000,\"0.0.0.0\")'"]
 
@@ -274,7 +284,7 @@ resource "aws_ecs_task_definition" "auth" {
   container_definitions = jsonencode([
     {
       name      = "auth"
-      image     = var.auth_image
+      image     = local.auth_image_resolved
       essential = true
 
       portMappings = [
@@ -418,7 +428,7 @@ resource "aws_ecs_task_definition" "image_worker" {
   container_definitions = jsonencode([
     {
       name      = "image-worker"
-      image     = var.worker_image
+      image     = local.worker_image_resolved
       essential = true
 
       environment = [
