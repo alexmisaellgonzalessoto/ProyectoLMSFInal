@@ -4,18 +4,18 @@ Este documento muestra la arquitectura principal y, en especial, la configuracio
 
 ## Configuracion Fargate por defecto (variables.tf)
 
-| Servicio | Desired | Min | Max |
-|----------|---------|-----|-----|
+| Servicio | Deseado | Minimo | Maximo |
+|----------|---------|--------|--------|
 | Frontend | `2` | `1` | `4` |
 | Backend | `2` | `1` | `4` |
-| Auth | `1` | N/A | N/A |
-| Image Worker | `1` | `1` | `6` |
+| Autenticacion | `1` | No aplica | No aplica |
+| Worker de imagenes | `1` | `1` | `6` |
 
 ## Configuracion de bajo costo (terraform.tfvars dev)
 
-| Servicio | Desired | Min | Max |
-|----------|---------|-----|-----|
+| Servicio | Deseado | Minimo | Maximo |
+|----------|---------|--------|--------|
 | Frontend | `0` | `0` | `1` |
 | Backend | `0` | `0` | `1` |
-| Auth | `0` | N/A | N/A |
-| Image Worker | `0` | `0` | `1` |
+| Autenticacion | `0` | No aplica | No aplica |
+| Worker de imagenes | `0` | `0` | `1` |

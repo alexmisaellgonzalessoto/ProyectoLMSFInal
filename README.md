@@ -67,7 +67,7 @@ Notas:
 
 ## Arquitectura y diagrama
 
-- Diagrama actualizado: `docs/ARCHITECTURE.md`
+- Diagrama Configuracion: `docs/ARCHITECTURE.md`
 - Incluye configuracion ECS Fargate por servicio:
   - `desired_count`
   - `min_capacity`
