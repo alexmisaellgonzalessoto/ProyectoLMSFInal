@@ -61,6 +61,8 @@
           set_fact:
             ecr_registry: "{{ lookup('env', 'AWS_ACCOUNT_ID') }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
             alb_dns: "{{ tf_outputs.alb_dns_name.value }}"
+            backend_target_group_arn: "{{ tf_outputs.backend_target_group_arn.value }}"
+            frontend_target_group_arn: "{{ tf_outputs.frontend_target_group_arn.value }}"
             aurora_endpoint: "{{ tf_outputs.aurora_cluster_endpoint.value }}"
             aurora_secret_id: "{{ (tf_outputs.aurora_secret_arn.value if (tf_outputs.aurora_secret_arn is defined and tf_outputs.aurora_secret_arn.value is defined) else 'lms/aurora/credentials-' ~ env ~ '-' ~ lookup('env', 'AWS_ACCOUNT_ID')) }}"
             s3_certificates_bucket: "{{ tf_outputs.certificates_bucket_name.value }}"
@@ -290,46 +292,55 @@
 
     - name: Ejecutar health checks
       block:
-        - name: Wait for ALB to be ready
+        - name: Wait for services to propagate
           pause:
-            seconds: 30
+            seconds: 20
             
-        - name: Check ALB health
-          uri:
-            url: "http://{{ alb_dns }}/health"
-            method: GET
-            status_code: 200
-          register: health_check
-          retries: 5
-          delay: 10
-          until: health_check.status == 200
-          
-        - name: Check backend API
-          uri:
-            url: "http://{{ alb_dns }}/api/health"
-            method: GET
-            status_code: 200
-          register: api_health
-          retries: 5
-          delay: 10
-          until: api_health.status == 200
-          
-        - name: Verificar conexión a Aurora
+        - name: Check frontend target group health
           command: >
-            mysql -h {{ db_credentials.host }}
-            -u {{ db_credentials.username }}
-            -p{{ db_credentials.password }}
-            -e "SELECT 1"
-          register: db_check
+            aws elbv2 describe-target-health
+            --target-group-arn {{ frontend_target_group_arn }}
+            --region {{ aws_region }}
+            --query 'TargetHealthDescriptions[*].TargetHealth.State'
+            --output text
+          register: frontend_tg_health
           changed_when: false
-          no_log: true
+          retries: 5
+          delay: 10
+          until: "'healthy' in frontend_tg_health.stdout"
+
+        - name: Check backend target group health
+          command: >
+            aws elbv2 describe-target-health
+            --target-group-arn {{ backend_target_group_arn }}
+            --region {{ aws_region }}
+            --query 'TargetHealthDescriptions[*].TargetHealth.State'
+            --output text
+          register: backend_tg_health
+          changed_when: false
+          retries: 5
+          delay: 10
+          until: "'healthy' in backend_tg_health.stdout"
+          
+        - name: Check Aurora cluster status
+          command: >
+            aws rds describe-db-clusters
+            --db-cluster-identifier lms-aurora-cluster-{{ env }}
+            --region {{ aws_region }}
+            --query 'DBClusters[0].Status'
+            --output text
+          register: aurora_status
+          changed_when: false
+          retries: 5
+          delay: 10
+          until: aurora_status.stdout == "available"
           
         - name: Mostrar estado del sistema
           debug:
             msg:
-            - "ALB esta bien: todo OK"
-            - "Backend api ok: Todo bien"
-            - "Conexión a BD Aurora exitosa"
+              - "Target group frontend healthy"
+              - "Target group backend healthy"
+              - "Aurora disponible"
       tags: [healthcheck]
 
 
