@@ -153,3 +153,13 @@ Parametros principales:
 - Se corrigieron rutas rotas entre carpetas (`front`, `back`, `infra/terraform`).
 - Se alinearon nombres de templates Ansible con archivos reales.
 - Se agrego `front/nginx.conf` y se completo `front/dockerfile`.
+
+## Comandos de despliegue infraestructura
+
+```bash
+cd /home/alex/IAC/infra/terraform
+terraform init
+terraform validate
+terraform plan -var="environment=dev" -out=tfplan
+terraform apply -input=false tfplan
+```
