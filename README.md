@@ -57,7 +57,7 @@ ProyectoLMSFinal/
 │  └─ tf/                    # Sandbox simple (no productivo)
 ├─ terratest/                # Tests de IaC
 └─ docs/
-   ├─ ARCHITECTURE.md
+   ├─ ARQUITECTURA.md
    └─ PROJECT_STRUCTURE.md
 ```
 
@@ -67,7 +67,7 @@ Notas:
 
 ## Arquitectura y diagrama
 
-- Diagrama Configuracion: `docs/ARCHITECTURE.md`
+- Diagrama Configuracion: `docs/ARQUITECTURA.md`
 - Incluye configuracion ECS Fargate por servicio:
   - `desired_count`
   - `min_capacity`

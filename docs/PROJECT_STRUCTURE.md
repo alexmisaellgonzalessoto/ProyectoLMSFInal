@@ -12,7 +12,7 @@ ProyectoLMSFinal/
 │  └─ tf/                    # Sandbox/ejemplo simple (no productivo)
 ├─ terratest/                # Pruebas de IaC
 └─ docs/
-   ├─ ARCHITECTURE.md        # Diagrama + capacidades ECS/Fargate
+   ├─ ARQUITECTURA.md        # Diagrama + capacidades ECS/Fargate
    └─ PROJECT_STRUCTURE.md   # Este archivo
 ```
 
