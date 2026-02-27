@@ -62,6 +62,7 @@
             ecr_registry: "{{ lookup('env', 'AWS_ACCOUNT_ID') }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
             alb_dns: "{{ tf_outputs.alb_dns_name.value }}"
             aurora_endpoint: "{{ tf_outputs.aurora_cluster_endpoint.value }}"
+            aurora_secret_id: "{{ (tf_outputs.aurora_secret_arn.value if (tf_outputs.aurora_secret_arn is defined and tf_outputs.aurora_secret_arn.value is defined) else 'lms/aurora/credentials-' ~ env ~ '-' ~ lookup('env', 'AWS_ACCOUNT_ID')) }}"
             s3_certificates_bucket: "{{ tf_outputs.certificates_bucket_name.value }}"
             s3_resources_bucket: "{{ tf_outputs.educational_resources_bucket_name.value }}"
             s3_submissions_bucket: "{{ tf_outputs.student_submissions_bucket_name.value }}"
@@ -87,7 +88,7 @@
         - name: Obtener credenciales de Secrets Manager
           command: >
             aws secretsmanager get-secret-value
-            --secret-id lms/aurora/credentials-{{ env }}
+            --secret-id {{ aurora_secret_id }}
             --region {{ aws_region }}
             --query SecretString
             --output text
