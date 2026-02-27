@@ -295,6 +295,28 @@
         - name: Wait for services to propagate
           pause:
             seconds: 20
+
+        - name: Get ECS frontend service capacity
+          command: >
+            aws ecs describe-services
+            --cluster {{ ecs_cluster_name }}
+            --services lms-frontend-service-{{ env }}
+            --region {{ aws_region }}
+            --query 'services[0].[desiredCount,runningCount]'
+            --output text
+          register: frontend_capacity
+          changed_when: false
+
+        - name: Get ECS backend service capacity
+          command: >
+            aws ecs describe-services
+            --cluster {{ ecs_cluster_name }}
+            --services lms-backend-service-{{ env }}
+            --region {{ aws_region }}
+            --query 'services[0].[desiredCount,runningCount]'
+            --output text
+          register: backend_capacity
+          changed_when: false
             
         - name: Check frontend target group health
           command: >
@@ -308,6 +330,7 @@
           retries: 5
           delay: 10
           until: "'healthy' in frontend_tg_health.stdout"
+          when: (frontend_capacity.stdout.split()[0] | int) > 0
 
         - name: Check backend target group health
           command: >
@@ -321,6 +344,7 @@
           retries: 5
           delay: 10
           until: "'healthy' in backend_tg_health.stdout"
+          when: (backend_capacity.stdout.split()[0] | int) > 0
           
         - name: Check Aurora cluster status
           command: >
@@ -338,8 +362,10 @@
         - name: Mostrar estado del sistema
           debug:
             msg:
-              - "Target group frontend healthy"
-              - "Target group backend healthy"
+              - "Frontend desired/running: {{ frontend_capacity.stdout }}"
+              - "Backend desired/running: {{ backend_capacity.stdout }}"
+              - "Target group frontend revisado solo si desired > 0"
+              - "Target group backend revisado solo si desired > 0"
               - "Aurora disponible"
       tags: [healthcheck]
 
