@@ -2,10 +2,6 @@
 
 Este documento muestra la arquitectura principal y, en especial, la configuracion de tareas ECS Fargate por servicio.
 
-## Diagrama
-
-![Diagrama de arquitectura LMS](assets/diagrama-arquitectura-lms.jpeg)
-
 ## Configuracion Fargate por defecto (variables.tf)
 
 | Servicio | Desired | Min | Max |
